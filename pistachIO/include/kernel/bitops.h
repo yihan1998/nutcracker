@@ -34,8 +34,14 @@ static inline void set_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btsl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-	unsigned int mask = 1U << nr;
-    atomic_fetch_or(addr, mask);
+	// Cast the address to an atomic type pointer for atomic operations
+    atomic_uint *atomic_addr = (atomic_uint *)addr;
+    // Calculate the bit mask for the bit to set
+    unsigned int mask = 1U << nr;
+    // Atomically OR the mask with the current value to set the bit
+    // atomic_fetch_or_explicit performs an atomic bitwise OR and returns the original value
+    // The memory_order_relaxed argument specifies that we don't need any specific memory ordering guarantees
+    atomic_fetch_or_explicit(atomic_addr, mask, memory_order_relaxed);
 #else
 	pr_err("Unknown architecture!\n");
 #endif
@@ -45,8 +51,16 @@ static inline void clear_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btrl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-	unsigned int mask = ~(1U << nr);
-    atomic_fetch_and(addr, mask);
+	// Cast the address to an atomic type pointer for atomic operations
+    atomic_uint *atomic_addr = (atomic_uint *)addr;
+    
+    // Calculate the bit mask for the bit to clear
+    unsigned int mask = ~(1U << nr);
+    
+    // Atomically AND the mask with the current value to clear the bit
+    // atomic_fetch_and_explicit performs an atomic bitwise AND and returns the original value
+    // The memory_order_relaxed argument specifies that we don't need any specific memory ordering guarantees
+    atomic_fetch_and_explicit(atomic_addr, mask, memory_order_relaxed);
 #else
 	pr_err("Unknown architecture!\n");
 #endif
