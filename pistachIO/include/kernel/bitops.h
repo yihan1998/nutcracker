@@ -38,9 +38,9 @@ static inline void set_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     __asm__ volatile (
-        "1:     ldrex   %0, [%2]        \n" // Load the value exclusively
+        "1:     ldrx	%0, [%2]        \n" // Load the value exclusively
         "       orr     %0, %0, %3      \n" // Set the bit using ORR
-        "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
+        "       strx	%1, %0, [%2]    \n" // Attempt to store the new value
         "       teq     %1, #0          \n" // Test if the store was successful
         "       bne     1b              "   // If not, retry
         : "=&r" (old), "=&r" (tmp)
@@ -61,9 +61,9 @@ static inline void clear_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     __asm__ volatile (
-        "1:     ldrex   %0, [%2]        \n" // Load the current value exclusively
+        "1:     ldrx	%0, [%2]        \n" // Load the current value exclusively
         "       bic     %0, %0, %3      \n" // Clear the bit using Bit Clear (BIC)
-        "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
+        "       strx	%1, %0, [%2]    \n" // Attempt to store the new value
         "       teq     %1, #0          \n" // Test if the store was successful
         "       bne     1b              "   // If not, retry
         : "=&r" (old), "=&r" (tmp)
