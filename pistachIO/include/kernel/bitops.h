@@ -33,7 +33,7 @@ static inline void set_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btsl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-	uint32_t *word = (uint32_t *)addr;
+	uint32_t * work = (uint32_t *)addr;
     uint32_t mask = 1U << (nr & 31); // Calculate mask for bit to set
     uint32_t old, tmp;
 
@@ -43,7 +43,7 @@ static inline void set_bit(int nr, volatile void * addr) {
     "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
     "       teq     %1, #0          \n" // Test if the store was successful
     "       bne     1b              "   // Retry if not successful
-    : "=&r" (old), "=&r" (tmp), "+r" (word), "r" (mask)
+    : "=&r" (old), "=&r" (tmp), "+r" (work), "r" (mask)
     : 
     : "cc", "memory"                       // Clobbers
     );
@@ -56,7 +56,6 @@ static inline void clear_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btrl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-uint32_t *word = (uint32_t *)addr;
     uint32_t *word = (uint32_t *)addr;
     uint32_t mask = 1U << (nr & 31); // Calculate mask for bit to clear
     uint32_t old, tmp;
