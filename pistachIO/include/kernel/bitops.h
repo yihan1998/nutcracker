@@ -61,11 +61,11 @@ static inline void clear_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     asm volatile (
-		"1:     ldrex %0, [%2]\n\t"
+		// "1:     ldrex %0, [%2]\n\t"
 		"       bic %0, %0, %3\n\t"
 		"       strex %1, %0, [%2]\n\t"
 		"       teq %1, #0\n\t"
-		"       bne 1b"
+		// "       bne 1b"
 		: "=&r" (old), "=&r" (tmp), "+r" (word)
 		: "r" (mask)
 		: "cc", "memory"
