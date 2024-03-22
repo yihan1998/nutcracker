@@ -61,11 +61,11 @@ static inline void clear_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     asm volatile (
-		// "1:     ldrex %0, [%2]\n\t"
+		"1:     ldrex %0, [%2]\n\t"
 		"       bic %0, %0, %3\n\t"
 		"       strex %1, %0, [%2]\n\t"
 		"       teq %1, #0\n\t"
-		// "       bne 1b"
+		"       bne 1b"
 		: "=&r" (old), "=&r" (tmp), "+r" (word)
 		: "r" (mask)
 		: "cc", "memory"
@@ -73,6 +73,24 @@ static inline void clear_bit(int nr, volatile void * addr) {
 #else
 	pr_err("Unknown architecture!\n");
 #endif
+}
+
+void atomic_increment(volatile int *ptr) {
+    int success, value;
+    do {
+        // Load the current value of *ptr exclusively
+        asm volatile ("ldrex %0, [%1]"
+                      : "=r" (value)
+                      : "r" (ptr));
+        // Increment the value
+        value++;
+
+        // Attempt to store the incremented value back to *ptr
+        asm volatile ("strex %0, %2, [%1]"
+                      : "=&r" (success)
+                      : "r" (ptr), "r" (value)
+                      : "cc", "memory"); // Use "cc" and "memory" clobbers
+    } while (success != 0); // Repeat if the store was not successful
 }
 
 /**
