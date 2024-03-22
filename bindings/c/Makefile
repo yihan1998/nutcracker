@@ -9,12 +9,6 @@ TARGET		:= libcacao.so
 CFLAGS	:= -Wall -O3 -g -fPIC
 LDFLAGS	:= -shared
 
-# DPDK
-LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
-LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
-CXXFLAGS	+= $(LIBDPDK_CFLAGS)
-LDFLAGS 	+= $(LIBDPDK_LDFLAGS)
-
 all: $(TARGET)
 
 C_STANDARD	:= -std=gnu11

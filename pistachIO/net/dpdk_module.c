@@ -17,13 +17,13 @@
 #include <rte_mempool.h>
 #include <rte_version.h>
 
-#include "core.h"
-#include "ipc.h"
 #include "printk.h"
 #include "list.h"
+#include "net/dpdk_module.h"
+// #include "kernel/threads.h"
 
 /* Maximum number of packets to be retrieved via burst */
-#define MAX_PKT_BURST   512
+#define MAX_PKT_BURST   64
 
 #define MEMPOOL_CACHE_SIZE  256
 #define N_MBUF              8192

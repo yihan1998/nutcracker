@@ -4,58 +4,57 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "opt.h"
-#include "printk.h"
-#include "file.h"
-#include "fs.h"
-#include "net.h"
+#include "net/net.h"
+#include "net/skbuff.h"
+#include "fs/fs.h"
+#include "fs/file.h"
+#include "fs/aio.h"
 
-#include <rte_mempool.h>
+#define NR_MAX_SOCKET   4096
 
-#define NR_MAX_SOCKET   2048
+struct rte_mempool * skb_mp;
+struct rte_mempool * socket_mp;
+struct rte_mempool * ioctx_mp;
+struct rte_mempool * iotask_mp;
 
 int __init fs_init(void) {
-    int shm_fd;
-    void * ptr;
-    struct rte_mempool * mp;
+    int fd;
 
-    mp = rte_mempool_create("socket_mp", NR_MAX_SOCKET, sizeof(struct socket), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
-    assert(mp != NULL);
+    skb_mp = rte_mempool_create("skb_mp", 8192, sizeof(struct sk_buff) + 1460, 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    assert(skb_mp != NULL);
 
-    mp = rte_mempool_create("file_mp", NR_MAX_FILE, sizeof(struct file), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
-    assert(mp != NULL);
+    socket_mp = rte_mempool_create("socket_mp", NR_MAX_SOCKET, sizeof(struct socket), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    assert(socket_mp != NULL);
 
-    // Open the shared memory segment
-    shm_fd = shm_open("file_table", O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
+    file_mp = rte_mempool_create("file_mp", NR_MAX_FILE, sizeof(struct file), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    assert(file_mp != NULL);
+
+    ioctx_mp = rte_mempool_create("io_ctx_mp", NR_MAX_IO_CTX, sizeof(struct io_context), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    assert(ioctx_mp != NULL);
+
+    iotask_mp = rte_mempool_create("io_task_mp", NR_MAX_IO_TASK, sizeof(struct iocb_task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    assert(iotask_mp != NULL);
+
+    fd = shm_open("fdtable", O_CREAT | O_RDWR, 0666);
+    if (fd == -1) {
         perror("shm_open");
-        return 0;
+        exit(EXIT_FAILURE);
     }
 
-    // Size the shared memory object
-    if (ftruncate(shm_fd, sizeof(struct files_struct)) == -1) {
+    if (ftruncate(fd, sizeof(struct files_struct)) == -1) {
         perror("ftruncate");
-        close(shm_fd);
-        shm_unlink("file_table");
-        return 0;
+        exit(EXIT_FAILURE);
     }
 
-    // Map the shared memory segment to the process's address space
-    ptr = mmap(0, sizeof(struct files_struct), PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (ptr == MAP_FAILED) {
+    struct files_struct * fs = mmap(NULL, sizeof(struct files_struct), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (fs == MAP_FAILED) {
         perror("mmap");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
-    pr_debug(FILE_DEBUG, " > shared pointer: %p\n", ptr);
+    memset(fs, 0, sizeof(struct files_struct));
 
-    files = (struct files_struct *)ptr;
-    memset(files, 0, sizeof(struct files_struct));
-
-    /* Reserve 0, 1, and 2 for stdin, stdout, and stderr */
-    set_open_fd(0);
-    set_open_fd(1);
-    set_open_fd(2);
+    files = fs;
 
     return 0;
 }

@@ -6,17 +6,9 @@
 use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::io::{self, Write};
 
-// fn convert_error(ret: c_int) -> Result<(), i32> {
-//     if ret == 0 {
-//         Ok(())
-//     } else {
-//         Err(ret as i32)
-//     }
-// }
-
-// pub mod ffi {
-//     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-// }
+pub mod ffi {
+    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+}
 
 pub enum SocketType {
     Tcp(TcpStream),
@@ -30,20 +22,6 @@ pub struct Context {
 impl Context {
     pub fn new(socket: SocketType) -> Self {
         Context { socket }
-    }
-
-    pub fn send(&mut self, data: &[u8], addr: Option<SocketAddr>) -> std::io::Result<()> {
-        match &mut self.socket {
-            SocketType::Tcp(tcp_stream) => tcp_stream.write_all(data),
-            SocketType::Udp(udp_socket) => {
-                if let Some(address) = addr {
-                    udp_socket.send_to(data, address)?;
-                } else {
-                    return Err(io::Error::new(io::ErrorKind::Other, "UDP address not specified"));
-                }
-                Ok(())
-            }
-        }
     }
 }
 
@@ -62,12 +40,4 @@ mod tests {
         let context = Context::new(SocketType::Udp(udp_socket));
     }
 
-    #[test]
-    fn test_new_context_with_tcp() {
-        // Set up a TCP listener
-        let listener = TcpListener::bind("0.0.0.0:1234").unwrap();
-        let addr = listener.local_addr().unwrap();
-        let tcp_stream = std::net::TcpStream::connect(addr).unwrap();
-        let context = Context::new(SocketType::Tcp(tcp_stream));
-    }
 }
