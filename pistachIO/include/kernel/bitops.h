@@ -33,20 +33,8 @@ static inline void set_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btsl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-	volatile uint32_t *vaddr = (uint32_t *)addr;
-    uint32_t mask = 1U << nr;
-    uint32_t old, tmp;
-
-    __asm__ volatile (
-        "1:     ldrx	%0, [%2]        \n" // Load the value exclusively
-        "       orr     %0, %0, %3      \n" // Set the bit using ORR
-        "       strx	%1, %0, [%2]    \n" // Attempt to store the new value
-        "       teq     %1, #0          \n" // Test if the store was successful
-        "       bne     1b              "   // If not, retry
-        : "=&r" (old), "=&r" (tmp)
-        : "r" (vaddr), "r" (mask)
-        : "cc", "memory"
-    );
+	unsigned int mask = 1U << nr;
+    atomic_fetch_or(addr, mask);
 #else
 	pr_err("Unknown architecture!\n");
 #endif
@@ -56,20 +44,8 @@ static inline void clear_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btrl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-	volatile uint32_t *vaddr = (uint32_t *)addr;
-    uint32_t mask = 1U << nr;
-    uint32_t old, tmp;
-
-    __asm__ volatile (
-        "1:     ldrx	%0, [%2]        \n" // Load the current value exclusively
-        "       bic     %0, %0, %3      \n" // Clear the bit using Bit Clear (BIC)
-        "       strx	%1, %0, [%2]    \n" // Attempt to store the new value
-        "       teq     %1, #0          \n" // Test if the store was successful
-        "       bne     1b              "   // If not, retry
-        : "=&r" (old), "=&r" (tmp)
-        : "r" (vaddr), "r" (mask)
-        : "cc", "memory"
-    );
+	unsigned int mask = ~(1U << nr);
+    atomic_fetch_and(addr, mask);
 #else
 	pr_err("Unknown architecture!\n");
 #endif
