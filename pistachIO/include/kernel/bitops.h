@@ -38,14 +38,14 @@ static inline void set_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     asm volatile (
-    "1:     ldrex   %0, [%2]        \n" // Load the current value exclusively
-    "       orr     %0, %0, %3      \n" // Set the specified bit
-    "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
-    "       teq     %1, #0          \n" // Test if the store was successful
-    "       bne     1b              "   // Retry if not successful
-    : "=&r" (old), "=&r" (tmp), "+r" (work)
-    : "r" (mask)
-    : "cc", "memory"                       // Clobbers
+		"1:     ldrex %0, [%2]\n\t"
+		"       orr %0, %0, %3\n\t"
+		"       strex %1, %0, [%2]\n\t"
+		"       teq %1, #0\n\t"
+		"       bne 1b"
+		: "=&r" (old), "=&r" (tmp), "+r" (work)
+		: "r" (mask)
+		: "cc", "memory"
     );
 #else
 	pr_err("Unknown architecture!\n");
@@ -61,14 +61,14 @@ static inline void clear_bit(int nr, volatile void * addr) {
     uint32_t old, tmp;
 
     asm volatile (
-    "1:     ldrex   %0, [%2]        \n" // Load the current value exclusively
-    "       bic     %0, %0, %3      \n" // Clear the specified bit using BIC
-    "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
-    "       teq     %1, #0          \n" // Test if the store was successful
-    "       bne     1b              "   // Retry if not successful
-    : "=&r" (old), "=&r" (tmp), "+r" (word)
-    : "r" (mask)
-    : "cc", "memory"                       // Clobbers
+		"1:     ldrex %0, [%2]\n\t"
+		"       bic %0, %0, %3\n\t"
+		"       strex %1, %0, [%2]\n\t"
+		"       teq %1, #0\n\t"
+		"       bne 1b"
+		: "=&r" (old), "=&r" (tmp), "+r" (word)
+		: "r" (mask)
+		: "cc", "memory"
     );
 #else
 	pr_err("Unknown architecture!\n");
