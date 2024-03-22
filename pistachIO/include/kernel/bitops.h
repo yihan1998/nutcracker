@@ -33,42 +33,43 @@ static inline void set_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btsl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
-    uint32_t *word = (uint32_t *)addr;
-    uint32_t mask = 1 << (nr & 31); // Assume 32-bit word and calculate bit mask
-    uint32_t old, new, tmp;
+	uint32_t *word = (uint32_t *)addr;
+    uint32_t mask = 1U << (nr & 31); // Calculate mask for bit to set
+    uint32_t old, tmp;
 
     asm volatile (
-    "1:     ldrex   %0, [%2]        \n" // Load the current value
-    "       orr     %1, %0, %3      \n" // Modify the value (set the bit)
-    "       strex   %0, %1, [%2]    \n" // Attempt to store the new value
-    "       teq     %0, #0          \n" // Test if the store succeeded
-    "       bne     1b              "   // Loop if not successful
-    : "=&r" (tmp), "=&r" (new), "+r" (word), "r" (mask)
+    "1:     ldrex   %0, [%2]        \n" // Load the current value exclusively
+    "       orr     %0, %0, %3      \n" // Set the specified bit
+    "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
+    "       teq     %1, #0          \n" // Test if the store was successful
+    "       bne     1b              "   // Retry if not successful
+    : "=&r" (old), "=&r" (tmp), "+r" (word), "r" (mask)
     : 
-    : "cc", "memory"                       // Clobber condition codes and memory
+    : "cc", "memory"                       // Clobbers
     );
 #else
 	pr_err("Unknown architecture!\n");
 #endif
 }
 
-static inline void clear_bit(int nr, void * addr) {
+static inline void clear_bit(int nr, volatile void * addr) {
 #if defined(__x86_64__) || defined(__i386__)
     asm volatile("btrl %1, %0" : "+m" (*(uint32_t *)addr) : "Ir" (nr));
 #elif defined(__arm__) || defined(__aarch64__)
 uint32_t *word = (uint32_t *)addr;
-    uint32_t mask = 1 << (nr & 31); // Calculate mask for the bit to clear
-    uint32_t old, new, tmp;
+    uint32_t *word = (uint32_t *)addr;
+    uint32_t mask = 1U << (nr & 31); // Calculate mask for bit to clear
+    uint32_t old, tmp;
 
     asm volatile (
-    "1:     ldrex   %0, [%2]        \n" // Load the value exclusively
-    "       bic     %1, %0, %3      \n" // Clear the bit using BIC (Bit Clear) instruction
-    "       strex   %0, %1, [%2]    \n" // Attempt to store the new value
-    "       teq     %0, #0          \n" // Test if the store was successful
-    "       bne     1b              "   // If not successful, retry
-    : "=&r" (tmp), "=&r" (new), "+r" (word), "r" (mask)
+    "1:     ldrex   %0, [%2]        \n" // Load the current value exclusively
+    "       bic     %0, %0, %3      \n" // Clear the specified bit using BIC
+    "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
+    "       teq     %1, #0          \n" // Test if the store was successful
+    "       bne     1b              "   // Retry if not successful
+    : "=&r" (old), "=&r" (tmp), "+r" (word), "r" (mask)
     : 
-    : "cc", "memory"                       // Declare clobbers
+    : "cc", "memory"                       // Clobbers
     );
 #else
 	pr_err("Unknown architecture!\n");
