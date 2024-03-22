@@ -43,8 +43,8 @@ static inline void set_bit(int nr, volatile void * addr) {
     "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
     "       teq     %1, #0          \n" // Test if the store was successful
     "       bne     1b              "   // Retry if not successful
-    : "=&r" (old), "=&r" (tmp), "+r" (work), "r" (mask)
-    : 
+    : "=&r" (old), "=&r" (tmp), "+r" (work)
+    : "r" (mask)
     : "cc", "memory"                       // Clobbers
     );
 #else
@@ -66,8 +66,8 @@ static inline void clear_bit(int nr, volatile void * addr) {
     "       strex   %1, %0, [%2]    \n" // Attempt to store the new value
     "       teq     %1, #0          \n" // Test if the store was successful
     "       bne     1b              "   // Retry if not successful
-    : "=&r" (old), "=&r" (tmp), "+r" (word), "r" (mask)
-    : 
+    : "=&r" (old), "=&r" (tmp), "+r" (word)
+    : "r" (mask)
     : "cc", "memory"                       // Clobbers
     );
 #else
