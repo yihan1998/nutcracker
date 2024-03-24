@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <sys/epoll.h>
 #include <sys/mman.h>
 #include <sys/types.h>

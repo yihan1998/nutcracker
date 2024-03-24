@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <stdint.h>

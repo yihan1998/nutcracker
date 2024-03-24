@@ -21,6 +21,7 @@
 extern unsigned long find_first_bit(const unsigned long *addr, unsigned long size);
 
 static inline bool test_bit(int nr, void * addr) {
+#if defined(__x86_64__) || defined(__i386__)
 	int ret = 0;
     asm volatile("bt %2, %1\n\t"
 				"sbb %%eax,%%eax\n\t"
@@ -28,6 +29,19 @@ static inline bool test_bit(int nr, void * addr) {
 				: "=m" (ret), "+m" (*(uint32_t *)addr)
 				: "Ir" (nr));
 	return (ret == -1);
+#elif defined(__arm__) || defined(__aarch64__)
+	// Cast the address to an atomic type pointer for atomic operations
+    atomic_uint *atomic_addr = (atomic_uint *)addr;
+    
+    // Atomically load the current value
+    unsigned int val = atomic_load_explicit(atomic_addr, memory_order_relaxed);
+    
+    // Calculate the bit mask for the bit to test
+    unsigned int mask = 1U << nr;
+    
+    // Test if the bit is set
+    return (val & mask) != 0;
+#endif
 }
 
 static inline void set_bit(int nr, volatile void * addr) {
