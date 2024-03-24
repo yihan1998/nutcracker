@@ -35,7 +35,7 @@ LIB_SRCS 	= printk/printk.c kernel/sched/wait.c lib/find_bit.c fs/file.c fs/aio.
 LIB_OBJS 	= $(LIB_SRCS:%.c=$(BUILD_DIR)/lib/%.o)
 LIB_NAME 	= $(BUILD_DIR)/lib/libaio.so
 
-SUBDIRS 	:= entry/ kernel/ fs/ ipc/ net/ loader/ printk/ core/
+SUBDIRS 	:= entry/ kernel/ fs/ ipc/ net/ loader/ printk/
 
 EXE_SRCS	:= $(shell find $(SUBDIRS) -name '*.c' -print) 
 EXE_SRCS 	+= lib/find_bit.c main.c
