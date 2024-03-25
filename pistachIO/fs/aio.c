@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <sys/mman.h>

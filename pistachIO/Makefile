@@ -21,13 +21,16 @@ ifdef CONFIG_NR_CPUS
 	CFLAGS	+= -DCONFIG_NR_CPUS=$(CONFIG_NR_CPUS)
 endif
 
-LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -ltcc #$(shell python3-config --ldflags)
+LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -ltcc -mcpu=cortex-a72 #$(shell python3-config --ldflags)
 
 # DPDK
-LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
-LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
-CFLAGS 		+= $(LIBDPDK_CFLAGS)
-LDFLAGS 	+= $(LIBDPDK_LDFLAGS)
+DPDK_DIR	= /root/dpdk-19.11
+DPDK_BUILD	= $(DPDK_DIR)/build
+CFLAGS 		+= -I$(DPDK_BUILD)/include
+LDFLAGS 	+= -L$(DPDK_BUILD)/lib -Wl,--whole-archive -ldpdk -Wl,--no-whole-archive \
+				-lrte_eal -lrte_mbuf -lrte_ethdev -lrte_mempool \
+    			-lrte_ring -lrte_net -lrte_bus_pci -lrte_pci -lrte_bus_vdev \
+   	 			-ldl -lpthread -lm
 
 # Project files
 # LIB_SRCS 	= printk/printk.c $(shell find fs/ lib/ kernel/ -name '*.c' -print) 
@@ -35,10 +38,10 @@ LIB_SRCS 	= printk/printk.c kernel/sched/wait.c lib/find_bit.c fs/file.c fs/aio.
 LIB_OBJS 	= $(LIB_SRCS:%.c=$(BUILD_DIR)/lib/%.o)
 LIB_NAME 	= $(BUILD_DIR)/lib/libaio.so
 
-SUBDIRS 	:= entry/ kernel/ fs/ ipc/ net/ loader/ printk/
+SUBDIRS 	:= entry/ kernel/ ipc/ net/ loader/ printk/
 
 EXE_SRCS	:= $(shell find $(SUBDIRS) -name '*.c' -print) 
-EXE_SRCS 	+= lib/find_bit.c main.c
+EXE_SRCS 	+= fs/file.c fs/fork.c fs/fs.c fs/read_write.c lib/find_bit.c main.c
 EXE_OBJS 	= $(EXE_SRCS:%.c=$(BUILD_DIR)/%.o)
 EXE_NAME 	= $(BUILD_DIR)/pistachio
 

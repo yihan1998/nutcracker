@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
@@ -43,7 +44,9 @@ static struct rte_eth_rxconf rx_conf = {
         .wthresh = 4,
     },
     .rx_free_thresh = 32,
+#if RTE_VERSION >= RTE_VERSION_NUM(20, 11, 0, 0)
     .rx_deferred_start = 1,
+#endif
 };
 
 /* TX queue configuration */
@@ -54,7 +57,9 @@ static struct rte_eth_txconf tx_conf = {
         .wthresh = 0,
     },
     .tx_free_thresh = 0,
+#if RTE_VERSION >= RTE_VERSION_NUM(20, 11, 0, 0)
     .tx_deferred_start = 1,
+#endif
 };
 
 /* Port configuration */
@@ -188,7 +193,15 @@ uint8_t * dpdk_get_rxpkt(int pid, int index, int * pkt_size) {
 
 uint32_t dpdk_recv_pkts(int pid) {
     if (rx_mbufs[pid].len != 0) {
+#if RTE_VERSION < RTE_VERSION_NUM(20, 11, 0, 0)
+        struct rte_mbuf ** pkts = rx_mbufs[pid].mtable;
+        for (int i = 0; i < rx_mbufs[pid].len; i++) {
+            rte_pktmbuf_free(pkts[i]);
+            RTE_MBUF_PREFETCH_TO_FREE(pkts[i+1]);
+        }
+#else
         rte_pktmbuf_free_bulk(rx_mbufs[pid].mtable, rx_mbufs[pid].len);
+#endif
         rx_mbufs[pid].len = 0;
     }
 

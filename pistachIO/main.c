@@ -196,11 +196,11 @@ int main(int argc, char ** argv) {
     set_open_fd(1);
     set_open_fd(2);
 
-    pr_info("init: initializing network module...\n");
-    net_init();
-
     pr_info("init: initializing worker threads...\n");
     worker_init();
+
+    pr_info("init: initializing network module...\n");
+    net_init();
 
     pr_info("init: register INET domain...\n");
 	inet_init();
@@ -214,7 +214,7 @@ int main(int argc, char ** argv) {
     void (*preload_io_init)(void);
     char *error;
 
-    void* preload_handle = dlopen("/local/yihan/Nutcracker-dev/pistachIO/build/lib/libaio.so", RTLD_NOW | RTLD_GLOBAL);
+    void* preload_handle = dlopen("./build/lib/libaio.so", RTLD_NOW | RTLD_GLOBAL);
     if (!preload_handle) {
         fprintf(stderr, "Failed to load preload library: %s\n", dlerror());
         exit(EXIT_FAILURE);
