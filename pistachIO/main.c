@@ -196,11 +196,11 @@ int main(int argc, char ** argv) {
     set_open_fd(1);
     set_open_fd(2);
 
-    pr_info("init: initializing network module...\n");
-    net_init();
-
     pr_info("init: initializing worker threads...\n");
     worker_init();
+
+    pr_info("init: initializing network module...\n");
+    net_init();
 
     pr_info("init: register INET domain...\n");
 	inet_init();
