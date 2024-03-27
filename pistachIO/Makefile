@@ -26,7 +26,7 @@ LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -ltcc -mcpu=cortex-a72 #$(shell pytho
 # DPDK
 DPDK_DIR	= /root/dpdk-19.11
 DPDK_BUILD	= $(DPDK_DIR)/build
-CFLAGS 		+= -I$(DPDK_BUILD)/include
+CFLAGS 		+= -I$(DPDK_BUILD)/include 
 LDFLAGS 	+= -L$(DPDK_BUILD)/lib -Wl,--whole-archive -ldpdk -Wl,--no-whole-archive \
 				-lrte_eal -lrte_mbuf -lrte_ethdev -lrte_mempool \
     			-lrte_ring -lrte_net -lrte_bus_pci -lrte_pci -lrte_bus_vdev \

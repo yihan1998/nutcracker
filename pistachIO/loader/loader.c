@@ -68,7 +68,13 @@ int compile_and_run(const char * filepath) {
         return -1;
     }
 
+#if defined(__x86_64__) || defined(__i386__)
     tcc_set_lib_path(s, "/usr/lib/x86_64-linux-gnu/tcc");
+#elif defined(__arm__) || defined(__aarch64__)
+    tcc_set_lib_path(s, "/usr/local/lib");
+#else
+    pr_err("Unknown architecture!\n");
+#endif
     tcc_add_include_path(s, "/usr/include");
 
     search_files(filepath, input_file, &nr_file);
@@ -123,7 +129,7 @@ int compile_and_run(const char * filepath) {
     // Retrieve a pointer to the compiled function
     int (*func)(void) = tcc_get_symbol(s, "main");
     if (!func) {
-        pr_err("Could not find add function\n");
+        pr_err("Could not find main function\n");
         return 1;
     }
 
