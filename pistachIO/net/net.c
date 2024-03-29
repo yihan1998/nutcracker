@@ -29,7 +29,12 @@ static struct rte_hash_parameters params = {
 	.hash_func = rte_jhash,
 	.hash_func_init_val = 0,
 	.socket_id = 0,
+    .extra_flag = RTE_HASH_EXTRA_FLAGS_RW_CONCURRENCY 
+                | RTE_HASH_EXTRA_FLAGS_MULTI_WRITER_ADD,
 };
+
+pthread_spinlock_t rx_lock;
+pthread_spinlock_t tx_lock;
 
 void * rx_module(void * arg) {
     int pid = 0, nb_recv;
@@ -42,22 +47,29 @@ void * rx_module(void * arg) {
     // curr = last_log;
 
     while (1) {
+        struct rte_mbuf * pkts[MAX_PKT_BURST];
+        
         // clock_gettime(CLOCK_REALTIME, &curr);
         // if (curr.tv_sec - last_log.tv_sec >= 1) {
         //     sec_count = 0;
         //     last_log = curr;
         // }
 
-        nb_recv = dpdk_recv_pkts(pid);
+        pthread_spin_lock(&rx_lock);
+        nb_recv = dpdk_recv_pkts(pid, pkts);
+        pthread_spin_unlock(&rx_lock);
         if (!nb_recv) {
             continue;
         }
+        // fprintf(stderr, "recv cnt: %d, used: %d\n", nb_recv, rte_eth_rx_queue_count(pid, 0));
 
         for (int i = 0; i < nb_recv; i++) {
-            pkt = dpdk_get_rxpkt(pid, i, &pkt_size);
+            pkt = dpdk_get_rxpkt(pid, pkts, i, &pkt_size);
             ethernet_input(pkt, pkt_size);
             // sec_count++;
         }
+
+        dpdk_recv_done(pkts, nb_recv);
     }
 
     return NULL;
@@ -114,6 +126,8 @@ int __init net_init(void) {
     pthread_t rx_pid, tx_pid;
     pthread_attr_t attr;
     cpu_set_t cpuset;
+    int nr_rx_module = 3;
+    // int nr_tx_module = 1;
 
     params.name = "udp_table";
     udp_table = rte_hash_create(&params);
@@ -122,27 +136,32 @@ int __init net_init(void) {
     // Initialize the thread attribute
     pthread_attr_init(&attr);
 
-    // Initialize the CPU set to be empty
-    CPU_ZERO(&cpuset);
-    // RX core runs on core 0
-    CPU_SET(0, &cpuset);
-
-    // Set the CPU affinity in the thread attributes
-    if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
-        perror("pthread_attr_setaffinity_np");
-        exit(EXIT_FAILURE);
-    }
+    pthread_spin_init(&rx_lock, PTHREAD_PROCESS_SHARED);
+    pthread_spin_init(&tx_lock, PTHREAD_PROCESS_SHARED);
 
     // Create the RX path
-    if (pthread_create(&rx_pid, &attr, rx_module, NULL) != 0) {
-        perror("Create RX path failed!");
-        exit(EXIT_FAILURE);
+    for (int i = 0; i < nr_rx_module; i++) {
+        // Initialize the CPU set to be empty
+        CPU_ZERO(&cpuset);
+        // RX core runs on core 0
+        CPU_SET(i, &cpuset);
+
+        // Set the CPU affinity in the thread attributes
+        if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
+            perror("pthread_attr_setaffinity_np");
+            exit(EXIT_FAILURE);
+        }
+
+        if (pthread_create(&rx_pid, &attr, rx_module, NULL) != 0) {
+            perror("Create RX path failed!");
+            exit(EXIT_FAILURE);
+        }
     }
 
     // Initialize the CPU set to be empty
     CPU_ZERO(&cpuset);
     // TX core runs on core 1
-    CPU_SET(1, &cpuset);
+    CPU_SET(nr_rx_module + 1, &cpuset);
 
     // Set the CPU affinity in the thread attributes
     if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {

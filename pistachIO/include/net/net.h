@@ -79,6 +79,9 @@ struct net_stats {
 
 extern struct net_stats stats;
 
+extern pthread_spinlock_t rx_lock;
+extern pthread_spinlock_t tx_lock;
+
 #define NET_RX_SUCCESS	0	/* keep 'em coming, baby */
 #define NET_RX_DROP		1	/* packet dropped */
 

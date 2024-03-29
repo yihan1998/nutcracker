@@ -6,6 +6,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#ifndef __GNUC__
+#define __GNUC__
+#endif
+
+#ifndef __BYTE_ORDER__
+#define __BYTE_ORDER__  __ORDER_LITTLE_ENDIAN__
+#endif
+
 #include <libaio.h>
 
 #define PORT 53
@@ -95,7 +104,7 @@ void parse_dns_query(const unsigned char* buffer, int size) {
 
 void aio_dns_filter_fn(void * argp) {
     struct aio_dns_filter_ctx * ctx;
-    uint8_t buffer[BUFFER_SIZE];
+    uint8_t buffer[BUFFER_SIZE] = {0};
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
 
@@ -106,7 +115,7 @@ void aio_dns_filter_fn(void * argp) {
         return;
     }
 
-    parse_dns_query(buffer, n);
+    // parse_dns_query(buffer, n);
 
     sendto(ctx->sockfd, (const char *)buffer, n, 0, (const struct sockaddr *)&cliaddr, len);
 

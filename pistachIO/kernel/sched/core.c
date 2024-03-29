@@ -87,9 +87,9 @@ int __init worker_init(void) {
 
     /* Create one runtime thread on each possible core */
     // for (int i = 0; i < nr_cpu_ids; i++) {
-    for (int i = 0; i < nr_cpu_ids - 2; i++) {
+    for (int i = 0; i < nr_cpu_ids - 4; i++) {
         CPU_ZERO(&cpuset);
-        CPU_SET(i + 2, &cpuset);
+        CPU_SET(i + 4, &cpuset);
         // Set the CPU affinity in the thread attributes
         if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
             perror("pthread_attr_setaffinity_np");

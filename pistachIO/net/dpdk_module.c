@@ -12,20 +12,10 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include <rte_common.h>
-#include <rte_eal.h>
-#include <rte_flow.h>
-#include <rte_ethdev.h>
-#include <rte_mempool.h>
-#include <rte_version.h>
-
 #include "printk.h"
 #include "list.h"
 #include "net/dpdk_module.h"
 // #include "kernel/threads.h"
-
-/* Maximum number of packets to be retrieved via burst */
-#define MAX_PKT_BURST   64
 
 #define MEMPOOL_CACHE_SIZE  256
 #define N_MBUF              8192
@@ -185,30 +175,25 @@ static int queue_init(void) {
     return 0;
 }
 
-uint8_t * dpdk_get_rxpkt(int pid, int index, int * pkt_size) {
-    struct rte_mbuf * rx_pkt = rx_mbufs[pid].mtable[index];
+uint8_t * dpdk_get_rxpkt(int pid, struct rte_mbuf ** pkts, int index, int * pkt_size) {
+    struct rte_mbuf * rx_pkt = pkts[index];
     *pkt_size = rx_pkt->pkt_len;
     return rte_pktmbuf_mtod(rx_pkt, uint8_t *);
 }
 
-uint32_t dpdk_recv_pkts(int pid) {
-    if (rx_mbufs[pid].len != 0) {
+uint32_t dpdk_recv_pkts(int pid, struct rte_mbuf ** pkts) {
+    return rte_eth_rx_burst((uint8_t)pid, 0, pkts, MAX_PKT_BURST);
+}
+
+void dpdk_recv_done(struct rte_mbuf ** pkts, int len) {
 #if RTE_VERSION < RTE_VERSION_NUM(20, 11, 0, 0)
-        struct rte_mbuf ** pkts = rx_mbufs[pid].mtable;
-        for (int i = 0; i < rx_mbufs[pid].len; i++) {
-            rte_pktmbuf_free(pkts[i]);
-            RTE_MBUF_PREFETCH_TO_FREE(pkts[i+1]);
-        }
-#else
-        rte_pktmbuf_free_bulk(rx_mbufs[pid].mtable, rx_mbufs[pid].len);
-#endif
-        rx_mbufs[pid].len = 0;
+    for (int i = 0; i < len; i++) {
+        rte_pktmbuf_free(pkts[i]);
+        RTE_MBUF_PREFETCH_TO_FREE(pkts[i+1]);
     }
-
-    int ret = rte_eth_rx_burst((uint8_t)pid, 0, rx_mbufs[pid].mtable, MAX_PKT_BURST);
-    rx_mbufs[pid].len = ret;
-
-    return ret;
+#else
+    rte_pktmbuf_free_bulk(pkts, len);
+#endif
 }
 
 uint8_t * dpdk_get_txpkt(int pid, int pkt_size) {

@@ -4,7 +4,7 @@ LD := gcc
 SRC_DIR		:= ./
 BUILD_DIR	:= ./build
 DEBUG		:= #-DDEBUG
-CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC $(DEBUG) #$(shell python3-config --includes)
+CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -march=native $(DEBUG) #$(shell python3-config --includes)
 
 INC 		:= -I/usr/include/ -I./entry -I./include
 CFLAGS 		+= $(INC)
@@ -21,16 +21,20 @@ ifdef CONFIG_NR_CPUS
 	CFLAGS	+= -DCONFIG_NR_CPUS=$(CONFIG_NR_CPUS)
 endif
 
-LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -ltcc -mcpu=cortex-a72 #$(shell python3-config --ldflags)
+LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -ltcc #$(shell python3-config --ldflags)
 
 # DPDK
-DPDK_DIR	= /root/dpdk-19.11
-DPDK_BUILD	= $(DPDK_DIR)/build
-CFLAGS 		+= -I$(DPDK_BUILD)/include 
-LDFLAGS 	+= -L$(DPDK_BUILD)/lib -Wl,--whole-archive -ldpdk -Wl,--no-whole-archive \
-				-lrte_eal -lrte_mbuf -lrte_ethdev -lrte_mempool \
-    			-lrte_ring -lrte_net -lrte_bus_pci -lrte_pci -lrte_bus_vdev \
-   	 			-ldl -lpthread -lm
+# DPDK_DIR	= /root/dpdk-19.11
+# DPDK_BUILD	= $(DPDK_DIR)/build
+# CFLAGS 		+= -I$(DPDK_BUILD)/include 
+# LDFLAGS 	+= -L$(DPDK_BUILD)/lib -Wl,--whole-archive -ldpdk -Wl,--no-whole-archive \
+# 				-lrte_eal -lrte_mbuf -lrte_ethdev -lrte_mempool \
+#     			-lrte_ring -lrte_net -lrte_bus_pci -lrte_pci -lrte_bus_vdev \
+#    	 			-ldl -lpthread -lm
+LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
+LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
+CFLAGS 		+= $(LIBDPDK_CFLAGS)
+LDFLAGS 	+= $(LIBDPDK_LDFLAGS)
 
 # Project files
 # LIB_SRCS 	= printk/printk.c $(shell find fs/ lib/ kernel/ -name '*.c' -print) 

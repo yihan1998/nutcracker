@@ -3,7 +3,7 @@ CC := gcc
 SRC_DIR		:= ./
 BUILD_DIR	:= ./build
 DEBUG		:= -DDEBUG
-CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC $(DEBUG)
+CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -march=native $(DEBUG)
 LIBPATH 	:= -I/usr/include/ -I./include
 CFLAGS 		+= $(LIBPATH)
 

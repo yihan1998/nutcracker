@@ -71,7 +71,8 @@ int compile_and_run(const char * filepath) {
 #if defined(__x86_64__) || defined(__i386__)
     tcc_set_lib_path(s, "/usr/lib/x86_64-linux-gnu/tcc");
 #elif defined(__arm__) || defined(__aarch64__)
-    tcc_set_lib_path(s, "/usr/local/lib");
+    // tcc_set_lib_path(s, "/usr/local/lib");
+    tcc_set_lib_path(s, "/usr/lib/aarch64-linux-gnu/tcc");
 #else
     pr_err("Unknown architecture!\n");
 #endif
