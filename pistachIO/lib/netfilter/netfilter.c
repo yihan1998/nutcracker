@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "opt.h"
 #include "printk.h"
 #include "linux/netfilter.h"
