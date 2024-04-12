@@ -1,5 +1,5 @@
-#ifndef _PRINK_H_
-#define _PRINK_H_
+#ifndef _KERN_H_
+#define _KERN_H_
 
 #include <stdio.h>
 #include <errno.h>
@@ -73,14 +73,6 @@ extern int printk(const char *fmt, ...);
 #ifdef DEBUG
 #define pr_devel(fmt, ...) \
 	printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-#else
-#define pr_devel(fmt, ...) \
-	no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-#endif
-
-#ifdef DEBUG
-#define pr_devel(fmt, ...) \
-	printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
 #define pr_debug(debug, fmt, ...)	\
 	if (debug && DBG_ON) {	\
 		printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__);	\
@@ -91,4 +83,4 @@ extern int printk(const char *fmt, ...);
 #define pr_debug(debug, fmt, ...)	do {} while (0)
 #endif
 
-#endif  /* _PRINK_H_ */
+#endif  /* _KERN_H_ */

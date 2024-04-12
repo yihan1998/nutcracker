@@ -18,6 +18,16 @@ static inline int list_empty(const struct list_head * head) {
     return head->next == head;
 }
 
+/**
+ * list_is_null - test whether a list is null
+ * 
+ * * Used by pthread_mutex (PTHREAD_MUTEX_INITIALIZER set list to NULL)
+ * @param head the list to test
+ */
+static inline int list_is_null(const struct list_head * head) {
+    return (head->next == NULL) && (head->prev == NULL);
+}
+
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
 /**
