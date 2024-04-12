@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <libtcc.h>
+#include <libgen.h>
 
 #include "opt.h"
 #include "printk.h"
@@ -62,6 +63,12 @@ int compile_and_run(const char * filepath) {
     int nr_file = 0;
     char * input_file[16] = {0};
 
+    // Make a copy of the original path since basename might modify it
+    char path[strlen(filepath) + 1];  // +1 for the null terminator
+    strcpy(path, filepath);
+
+    char * name = basename(path);
+
     TCCState * s = tcc_new();
     if (!s) {
         pr_err("Could not create tcc state\n");
@@ -76,6 +83,7 @@ int compile_and_run(const char * filepath) {
 #else
     pr_err("Unknown architecture!\n");
 #endif
+    tcc_add_include_path(s, "/local/yihan/Nutcracker-dev/pistachIO/include/");
     tcc_add_include_path(s, "/usr/include");
 
     search_files(filepath, input_file, &nr_file);
@@ -128,13 +136,13 @@ int compile_and_run(const char * filepath) {
     }
 
     // Retrieve a pointer to the compiled function
-    int (*func)(void) = tcc_get_symbol(s, "main");
+    int (*func)(void) = tcc_get_symbol(s, strcat(name, "_init"));
     if (!func) {
         pr_err("Could not find main function\n");
         return 1;
     }
 
-    tcc_delete(s);
+    // tcc_delete(s);
 
     // Call the function
     func();

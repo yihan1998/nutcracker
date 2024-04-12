@@ -22,6 +22,7 @@ pthread_t worker_ids[NR_CPUS];
 
 struct rte_ring * worker_rq;
 struct rte_ring * worker_cq;
+
 struct rte_mempool * task_mp;
 
 struct task_struct * create_new_task(void * argp, void (*func)(void *)) {

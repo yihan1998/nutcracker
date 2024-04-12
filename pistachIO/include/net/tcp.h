@@ -7,6 +7,6 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 
-extern int tcp_input(uint8_t * pkt, int pkt_size, struct iphdr * iphdr, struct tcphdr * tcphdr);
+extern int tcp_input(struct sk_buff * skb, struct iphdr * iphdr, struct tcphdr * tcphdr);
 
 #endif  /* _TCP_H_ */

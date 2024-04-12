@@ -68,7 +68,7 @@ struct net_proto_family {
 
 extern int sock_register(const struct net_proto_family * ops);
 
-extern struct rte_hash * udp_table;
+extern struct rte_hash * flow_table;
 
 struct net_stats {
     uint32_t sec_recv_bytes;

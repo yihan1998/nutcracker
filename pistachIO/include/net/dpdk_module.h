@@ -18,8 +18,11 @@
 extern uint8_t * dpdk_get_rxpkt(int pid, struct rte_mbuf ** pkts, int index, int * pkt_size);
 extern uint32_t dpdk_recv_pkts(int pid, struct rte_mbuf ** pkts);
 extern void dpdk_recv_done(struct rte_mbuf ** pkts, int len);
-extern uint8_t * dpdk_get_txpkt(int port_id, int pkt_size);
+extern struct rte_mbuf * dpdk_alloc_txpkt(int pkt_size);
+extern int dpdk_insert_txpkt(int pid, struct rte_mbuf * m);
 extern uint32_t dpdk_send_pkts(int port_id);
+
+extern struct rte_mempool * pkt_mempool;
 
 extern int __init dpdk_init(int argc, char ** argv);
 

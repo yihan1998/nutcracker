@@ -42,7 +42,7 @@ int __skb_wait_for_more_packets(struct sock * sk, int * err, long * timeo_p) {
  */
 static int skb_copy_datagram_iter(struct sk_buff * skb, struct iovec * to, int len) {
 	void * dst_buf = to->iov_base;
-	memcpy(dst_buf, skb->data, len);
+	memcpy(dst_buf, skb->buf, len);
 	return len;
 }
 

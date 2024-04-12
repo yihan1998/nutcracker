@@ -15,7 +15,6 @@
 #include "printk.h"
 #include "list.h"
 #include "net/dpdk_module.h"
-// #include "kernel/threads.h"
 
 #define MEMPOOL_CACHE_SIZE  256
 #define N_MBUF              8192
@@ -91,7 +90,7 @@ struct mbuf_table {
 struct rte_mempool * pkt_mempool;
 /* RX mbuf and TX mbuf */
 struct mbuf_table rx_mbufs[RTE_MAX_ETHPORTS];
-struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
+__thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 
 /**
  * mempool_init - init packet mempool on each port for RX/TX queue
@@ -102,16 +101,16 @@ static int mempool_init(void) {
     assert(pkt_mempool);
 
     /* Associate the first RX/TX to the first packet mempool (both used by control plane) */
-    uint16_t pid = 0;
-    RTE_ETH_FOREACH_DEV(pid) {
-        for (int i = 0; i < MAX_PKT_BURST; i++) {
-            /* Allocate TX packet buffer in DPDK context memory pool */
-            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
-            assert(tx_mbufs[pid].mtable[i] != NULL);
-        }
+    // uint16_t pid = 0;
+    // RTE_ETH_FOREACH_DEV(pid) {
+    //     for (int i = 0; i < MAX_PKT_BURST; i++) {
+    //         /* Allocate TX packet buffer in DPDK context memory pool */
+    //         tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
+    //         assert(tx_mbufs[pid].mtable[i] != NULL);
+    //     }
 
-        tx_mbufs[pid].len = 0;
-    }
+    //     tx_mbufs[pid].len = 0;
+    // }
 
     return 0;
 }
@@ -196,21 +195,24 @@ void dpdk_recv_done(struct rte_mbuf ** pkts, int len) {
 #endif
 }
 
-uint8_t * dpdk_get_txpkt(int pid, int pkt_size) {
-    if (unlikely(tx_mbufs[pid].len == MAX_PKT_BURST)) {
-        return NULL;
-    }
-
-    int next_pkt = tx_mbufs[pid].len;
-    struct rte_mbuf * tx_pkt = tx_mbufs[pid].mtable[next_pkt];
-
+struct rte_mbuf * dpdk_alloc_txpkt(int pkt_size) {
+    struct rte_mbuf * tx_pkt = rte_pktmbuf_alloc(pkt_mempool);
+    if (!tx_pkt) return NULL;
     tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
     tx_pkt->nb_segs = 1;
     tx_pkt->next = NULL;
-    
-    tx_mbufs[pid].len++;
+    return tx_pkt;
+}
 
-    return rte_pktmbuf_mtod(tx_pkt, uint8_t *);
+int dpdk_insert_txpkt(int pid, struct rte_mbuf * m) {
+    if (unlikely(tx_mbufs[pid].len == MAX_PKT_BURST)) {
+        return -1;
+    }
+
+    int next_pkt = tx_mbufs[pid].len;
+    tx_mbufs[pid].mtable[next_pkt] = m;
+    tx_mbufs[pid].len++;
+    return 0;
 }
 
 uint32_t dpdk_send_pkts(int pid) {
@@ -228,14 +230,14 @@ uint32_t dpdk_send_pkts(int pid) {
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
 
-        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        for (int i = 0; i < tx_mbufs[pid].len; i++) {
-            /* Allocate new buffer for sended packets */
-            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
-            if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
-                rte_exit(EXIT_FAILURE, "Failed to allocate wmbuf[%d] on device %d!\n", i, pid);
-            }
-        }
+        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
+        //     /* Allocate new buffer for sended packets */
+        //     tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
+        //     if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
+        //         rte_exit(EXIT_FAILURE, "Failed to allocate wmbuf[%d] on device %d!\n", i, pid);
+        //     }
+        // }
 
         tx_mbufs[pid].len = 0;
     }

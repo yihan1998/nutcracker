@@ -1,11 +1,25 @@
+#include "opt.h"
+#include "printk.h"
 #include "net/ethernet.h"
 #include "net/ip.h"
 
-int ethernet_input(uint8_t * pkt, int pkt_size) {
+int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct ethhdr * ethhdr;
     uint16_t proto;
     struct iphdr * iphdr;
+    struct sk_buff * skb;
+    int ret = NET_RX_SUCCESS;
+    
+    // pthread_spin_lock(&rx_lock);
+    skb = alloc_skb(pkt, pkt_size);
+    // pthread_spin_unlock(&rx_lock);
+    if (!skb) {
+		// pr_warn("Failed to allocate new skbuff!\n");
+		return NET_RX_DROP;
+	}
 
+    skb->m = m;
+    skb->ptr = pkt;
     ethhdr = (struct ethhdr *)pkt;
     proto = ntohs(ethhdr->h_proto);
 
@@ -13,13 +27,21 @@ int ethernet_input(uint8_t * pkt, int pkt_size) {
         case ETH_P_IP:
             /* pass to IP layer */
             iphdr = (struct iphdr *)&ethhdr[1];
-            ip4_input(pkt, pkt_size, iphdr);
+            // pthread_spin_lock(&rx_lock);
+            ret = ip4_input(skb, iphdr);
+            // pthread_spin_unlock(&rx_lock);
             break;
         default:
             break;
     }
 
-    return 0;
+    if (ret == NET_RX_DROP) {
+        pthread_spin_lock(&rx_lock);
+        free_skb(skb);
+        pthread_spin_unlock(&rx_lock);
+    }
+
+    return ret;
 }
 
 int ethernet_output(struct sock * sk, struct sk_buff * skb, uint8_t * pkt, int pkt_len) {

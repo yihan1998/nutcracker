@@ -6,6 +6,7 @@
 
 #include <rte_mempool.h>
 
+extern struct rte_mempool * skb_mp;
 extern struct rte_mempool * socket_mp;
 extern struct rte_mempool * file_mp;
 extern struct rte_mempool * ioctx_mp;

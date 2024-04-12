@@ -44,6 +44,8 @@ extern struct task_struct * create_new_task(void * argp, void (*func)(void *));
 extern struct rte_ring * worker_rq;
 extern struct rte_ring * worker_cq;
 
+extern struct rte_ring * fwd_cq;
+
 extern int __init sched_init(void);
 
 #endif  /* _KERNEL_SCHED_H_ */

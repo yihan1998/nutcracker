@@ -21,19 +21,19 @@ struct rte_mempool * iotask_mp;
 int __init fs_init(void) {
     int fd;
 
-    skb_mp = rte_mempool_create("skb_mp", 8192, sizeof(struct sk_buff) + 1460, 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    skb_mp = rte_mempool_create("skb_mp", 32768, sizeof(struct sk_buff) + 1460, RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(skb_mp != NULL);
 
-    socket_mp = rte_mempool_create("socket_mp", NR_MAX_SOCKET, sizeof(struct socket), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    socket_mp = rte_mempool_create("socket_mp", NR_MAX_SOCKET, sizeof(struct socket), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(socket_mp != NULL);
 
-    file_mp = rte_mempool_create("file_mp", NR_MAX_FILE, sizeof(struct file), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    file_mp = rte_mempool_create("file_mp", NR_MAX_FILE, sizeof(struct file), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(file_mp != NULL);
 
-    ioctx_mp = rte_mempool_create("io_ctx_mp", NR_MAX_IO_CTX, sizeof(struct io_context), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    ioctx_mp = rte_mempool_create("io_ctx_mp", NR_MAX_IO_CTX, sizeof(struct io_context), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(ioctx_mp != NULL);
 
-    iotask_mp = rte_mempool_create("io_task_mp", NR_MAX_IO_TASK, sizeof(struct iocb_task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    iotask_mp = rte_mempool_create("io_task_mp", NR_MAX_IO_TASK, sizeof(struct iocb_task_struct), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(iotask_mp != NULL);
 
     fd = shm_open("fdtable", O_CREAT | O_RDWR, 0666);

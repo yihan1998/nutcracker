@@ -211,11 +211,13 @@ int main(int argc, char ** argv) {
     pr_info("init: initializing loader...\n");
 	loader_init();
 
-    void (*preload_io_init)(void);
+    void (*preload_aio_init)(void);
+    void (*preload_lnftnl_init)(void);
     char *error;
 
-    void* preload_handle = dlopen("./build/lib/libaio.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!preload_handle) {
+    /* Preload libaio */
+    void* libaio_preload = dlopen("./build/lib/libaio.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!libaio_preload) {
         fprintf(stderr, "Failed to load preload library: %s\n", dlerror());
         exit(EXIT_FAILURE);
     }
@@ -225,8 +227,25 @@ int main(int argc, char ** argv) {
         exit(EXIT_FAILURE);
     }
 
-    *(void **) (&preload_io_init) = dlsym(preload_handle, "io_init");
-    preload_io_init();
+    *(void **) (&preload_aio_init) = dlsym(libaio_preload, "io_init");
+    assert(preload_aio_init != NULL);
+    preload_aio_init();
+
+    /* Preload libnftnl */
+    void* libnftnl_preload = dlopen("./build/lib/libnftnl.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!libnftnl_preload) {
+        fprintf(stderr, "Failed to load preload library: %s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
+
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    *(void **) (&preload_lnftnl_init) = dlsym(libnftnl_preload, "nftnl_init");
+    assert(preload_lnftnl_init != NULL);
+    preload_lnftnl_init();
 
 #if 0
     // Open the shared library

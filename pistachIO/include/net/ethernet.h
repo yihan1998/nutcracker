@@ -9,7 +9,7 @@
 
 #define ETHADDR_COPY(dst, src)  memcpy(dst, src, ETH_ALEN)
 
-extern int ethernet_input(uint8_t * pkt, int pkt_size);
+extern int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
 extern int ethernet_output(struct sock * sk, struct sk_buff * skb, uint8_t * pkt, int pkt_len);
 
 #endif  /* _ETHERNET_H_ */

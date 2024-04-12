@@ -3,7 +3,7 @@ LD := gcc
 
 SRC_DIR		:= ./
 BUILD_DIR	:= ./build
-DEBUG		:= #-DDEBUG
+DEBUG		:= -DDEBUG
 CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -march=native $(DEBUG) #$(shell python3-config --includes)
 
 INC 		:= -I/usr/include/ -I./entry -I./include
@@ -37,10 +37,13 @@ CFLAGS 		+= $(LIBDPDK_CFLAGS)
 LDFLAGS 	+= $(LIBDPDK_LDFLAGS)
 
 # Project files
-# LIB_SRCS 	= printk/printk.c $(shell find fs/ lib/ kernel/ -name '*.c' -print) 
-LIB_SRCS 	= printk/printk.c kernel/sched/wait.c lib/find_bit.c fs/file.c fs/aio.c
-LIB_OBJS 	= $(LIB_SRCS:%.c=$(BUILD_DIR)/lib/%.o)
-LIB_NAME 	= $(BUILD_DIR)/lib/libaio.so
+LIBAIO_SRCS	= printk/printk.c kernel/sched/wait.c lib/find_bit.c fs/file.c lib/aio/aio.c
+LIBAIO_OBJS	= $(LIBAIO_SRCS:%.c=$(BUILD_DIR)/lib/%.o)
+LIBAIO 	= $(BUILD_DIR)/lib/libaio.so
+
+LIBNFTNL_SRCS	= printk/printk.c lib/netfilter/netfilter.c
+LIBNFTNL_OBJS	= $(LIBNFTNL_SRCS:%.c=$(BUILD_DIR)/lib/%.o)
+LIBNFTNL	= $(BUILD_DIR)/lib/libnftnl.so
 
 SUBDIRS 	:= entry/ kernel/ ipc/ net/ loader/ printk/
 
@@ -49,7 +52,7 @@ EXE_SRCS 	+= fs/file.c fs/fork.c fs/fs.c fs/read_write.c lib/find_bit.c main.c
 EXE_OBJS 	= $(EXE_SRCS:%.c=$(BUILD_DIR)/%.o)
 EXE_NAME 	= $(BUILD_DIR)/pistachio
 
-all: $(EXE_NAME) $(LIB_NAME)
+all: $(EXE_NAME) $(LIBAIO) $(LIBNFTNL)
 
 C_STANDARD	:= -std=gnu11
 
@@ -72,7 +75,16 @@ $(EXE_NAME): $(EXE_OBJS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-$(LIB_NAME): $(LIB_OBJS)
+$(LIBAIO): $(LIBAIO_OBJS)
+	@echo ' '
+	@echo 'Building $(@)'
+	@echo 'Invoking Linker'
+	@$(MKDIR_P) $(dir $@)
+	$(LD) -o $(@) $^ $(LDFLAGS) -shared
+	@echo 'Finished building: $@'
+	@echo ' '
+
+$(LIBNFTNL): $(LIBNFTNL_OBJS)
 	@echo ' '
 	@echo 'Building $(@)'
 	@echo 'Invoking Linker'

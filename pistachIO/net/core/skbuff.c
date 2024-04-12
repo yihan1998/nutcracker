@@ -1,7 +1,8 @@
+#include "fs/fs.h"
 #include "net/net.h"
 #include "net/skbuff.h"
 
-struct sk_buff * alloc_skb(unsigned int data_len) {
+struct sk_buff * alloc_skb(uint8_t * data, unsigned int data_len) {
     struct sk_buff * skb = NULL;
 
     rte_mempool_get(skb_mp, (void *)&skb);
@@ -9,7 +10,8 @@ struct sk_buff * alloc_skb(unsigned int data_len) {
         return NULL;
     }
 
-    skb->data_len = data_len;
+    skb->len = data_len;
+    skb->ptr = data;
 
     return skb;
 }

@@ -56,7 +56,7 @@ int main(int argc, char * argv[]) {
         return -1;
     }
 
-    sleep(5);
+    sleep(15);
 
     if (read(loader_fd, res, strlen(res)) == -1) {
         pr_info(" > %s\n", res);

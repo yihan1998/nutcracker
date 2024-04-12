@@ -38,6 +38,7 @@ static inline int udp_bind(struct sock * sk, const struct sockaddr * uaddr, int 
 	key.daddr 		= 0;
 	key.fl4_sport 	= 0;
 	key.fl4_dport 	= 0;
+	key.flowi4_proto 	= IPPROTO_UDP;
 
 	snum = addr->sin_port;
 	inet->inet_rcv_saddr = inet->inet_saddr = addr->sin_addr.s_addr;
@@ -46,9 +47,9 @@ static inline int udp_bind(struct sock * sk, const struct sockaddr * uaddr, int 
 		/* TODO: Lookup for collide */
 		key.fl4_sport = snum;
 		pr_debug(UDP_DEBUG, "snum: %d, hash table: %p, saddr: " IP_STRING ", sport: %u, daddr: " IP_STRING ", dport: %u\n",
-			ntohs(snum), udp_table, NET_IP_FMT(key.saddr), ntohs(key.fl4_sport), NET_IP_FMT(key.daddr), ntohs(key.fl4_dport));
+			ntohs(snum), flow_table, NET_IP_FMT(key.saddr), ntohs(key.fl4_sport), NET_IP_FMT(key.daddr), ntohs(key.fl4_dport));
 
-		pos = rte_hash_add_key_data(udp_table, (const void *)&key, (void *)sk);
+		pos = rte_hash_add_key_data(flow_table, (const void *)&key, (void *)sk);
 		if (pos < 0) {
 			pr_warn("Failed to add key (pos0=%d)", pos);
 		}
@@ -87,21 +88,21 @@ static int udp_sendmsg(struct sock * sk, struct msghdr * msg, size_t len) {
 	saddr = inet->inet_saddr;
 	sport = inet->inet_sport;
 
-	skb = alloc_skb(len);
+	skb = alloc_skb(NULL, len);
 	if (!skb) {
-		pr_warn("Failed to make skb for message!");
+		pr_warn("Failed to make skb for message!\n");
 		err = -ENOMEM;
 		goto out;
 	}
 
 	skb->sk = sk;
 
-	skb->iphdr.saddr = saddr;
-	skb->iphdr.daddr = daddr;
-	skb->udphdr.source = sport;
-	skb->udphdr.dest = dport;
+	UDP_SKB_CB(skb)->header.saddr = saddr;
+	UDP_SKB_CB(skb)->header.daddr = daddr;
+	UDP_SKB_CB(skb)->source = sport;
+	UDP_SKB_CB(skb)->dest = dport;
 
-	memcpy(skb->data, src_buf, len);
+	memcpy(skb->buf, src_buf, len);
 
 	lock_sock(sk);
 
@@ -153,7 +154,7 @@ static int udp_recvmsg(struct sock * sk, struct msghdr * msg, size_t len, int no
 		return err;
 	}
 
-	data_len = skb->data_len;
+	data_len = skb->len;
 	copied = data_len;
 	if (copied < data_len) {
 		msg->msg_flags |= MSG_TRUNC;
@@ -171,8 +172,8 @@ static int udp_recvmsg(struct sock * sk, struct msghdr * msg, size_t len, int no
 
 	if (sin) {
 		sin->sin_family = AF_INET;
-		sin->sin_port = skb->udphdr.source;
-		sin->sin_addr.s_addr = skb->iphdr.saddr;
+		sin->sin_port = UDP_SKB_CB(skb)->source;
+		sin->sin_addr.s_addr = UDP_SKB_CB(skb)->header.saddr;
 		memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
 		*addr_len = sizeof(*sin);
 	}
@@ -217,11 +218,12 @@ static struct sock * udp_lookup_sock(uint32_t saddr, uint32_t sport, uint32_t da
     key.daddr = 0;
     key.fl4_sport = dport;
     key.fl4_dport = 0;
+	key.flowi4_proto 	= IPPROTO_UDP;
 
 	pr_debug(UDP_DEBUG, "Hash table: %p, saddr: " IP_STRING ", sport: %u, daddr: " IP_STRING ", dport: %u\n",
-			udp_table, NET_IP_FMT(key.saddr), ntohs(key.fl4_sport), NET_IP_FMT(key.daddr), ntohs(key.fl4_dport));
+			flow_table, NET_IP_FMT(key.saddr), ntohs(key.fl4_sport), NET_IP_FMT(key.daddr), ntohs(key.fl4_dport));
 
-	rte_hash_lookup_data(udp_table, (const void *)&key, (void **)&try_sk);
+	rte_hash_lookup_data(flow_table, (const void *)&key, (void **)&try_sk);
 
 	if (try_sk) {
 		return try_sk;
@@ -233,37 +235,21 @@ static struct sock * udp_lookup_sock(uint32_t saddr, uint32_t sport, uint32_t da
 /* wrapper for udp_queue_rcv_skb tacking care of csum conversion and
  * return code conversion for ip layer consumption
  */
-static inline int udp_unicast_rcv_skb(struct sock * sk, struct iphdr * iphdr, struct udphdr * udphdr, uint8_t * data, uint16_t len) {
+static inline int udp_unicast_rcv_skb(struct sock * sk, struct iphdr * iphdr, struct udphdr * udphdr, struct sk_buff * skb) {
 	struct udp_sock * udp = udp_sk(sk);
-	struct sk_buff * new_skb = alloc_skb(len);
-	if (!new_skb) {
-		pr_warn("Failed to allocate new skbuff!\n");
-		return NET_RX_DROP;
-	}
-
-	new_skb->sk = sk;
-
-	new_skb->iphdr = *iphdr;
-	new_skb->udphdr = *udphdr;
-
-	pr_debug(UDP_DEBUG, "%s: saddr: " IP_STRING ", sport: %u, daddr: " IP_STRING ", dport: %u, len: %d\n",
-			__func__, NET_IP_FMT(new_skb->iphdr.saddr), ntohs(new_skb->udphdr.source), 
-			NET_IP_FMT(new_skb->iphdr.daddr), ntohs(new_skb->udphdr.dest), len);
-
-	memcpy(new_skb->data, data, len);
 
 	lock_sock(sk);
-	list_add_tail(&new_skb->list, &udp->receive_queue);
+	list_add_tail(&skb->list, &udp->receive_queue);
 
 	if (!sock_flag(sk, SOCK_DEAD)) {
 		sk->sk_data_ready(sk);
 	}
 	unlock_sock(sk);
 
-	return 0;
+	return NET_RX_SUCCESS;
 }
 
-int udp_input(uint8_t * pkt, int pkt_size, struct iphdr * iphdr, struct udphdr * udphdr) {
+int udp_input(struct sk_buff * skb, struct iphdr * iphdr, struct udphdr * udphdr) {
     struct sock * sk = NULL;
 	uint16_t ulen, len;
 	uint8_t * data;
@@ -277,40 +263,61 @@ int udp_input(uint8_t * pkt, int pkt_size, struct iphdr * iphdr, struct udphdr *
 	if (!sk) {
 		sk = udp_lookup_sock(iphdr->saddr, udphdr->source, INADDR_ANY, udphdr->dest);
 		if (!sk) {
-			pr_warn("Failed to lookup sock!\n");
+			// pr_warn("Failed to lookup sock!\n");
 			return NET_RX_DROP;
 		}
 	}
 
-	return udp_unicast_rcv_skb(sk, iphdr, udphdr, data, len);
+	skb->sk = sk;
+	pr_debug(UDP_DEBUG, "%s: saddr: " IP_STRING ", sport: %u, daddr: " IP_STRING ", dport: %u, len: %d\n",
+			__func__, NET_IP_FMT(UDP_SKB_CB(skb)->header.saddr), ntohs(UDP_SKB_CB(skb)->source), 
+			NET_IP_FMT(UDP_SKB_CB(skb)->header.daddr), ntohs(UDP_SKB_CB(skb)->dest), len);
+
+	memcpy(skb->buf, data, len);
+
+	return udp_unicast_rcv_skb(sk, iphdr, udphdr, skb);
 }
 
 int udp_output(struct sock * sk) {
 	int pid = 0, ret = -ENODATA;
 	struct sk_buff * skb, * tmp;
+	struct rte_mbuf * m;
 	uint8_t * pkt;
 	int pkt_len;
 	struct udp_sock * udp = udp_sk(sk);
 	struct udphdr * udphdr;
 	uint8_t * p;
+	uint32_t saddr, daddr;
 
     list_for_each_entry_safe(skb, tmp, &udp->transmit_queue, list) {
-		pkt_len = skb->data_len + sizeof(struct udphdr) + sizeof(struct iphdr) + sizeof(struct ethhdr);
-		pkt = dpdk_get_txpkt(pid, pkt_len);
-		if (!pkt) {
+		pkt_len = skb->len + sizeof(struct udphdr) + sizeof(struct iphdr) + sizeof(struct ethhdr);
+		m = dpdk_alloc_txpkt(pkt_len);
+		if (!m) {
 			return 0;
 		}
 
+		pkt = rte_pktmbuf_mtod(m, uint8_t *);
 		udphdr = (struct udphdr *)(pkt + sizeof(struct ethhdr) + sizeof(struct iphdr));
-		udphdr->source = skb->udphdr.source;
-		udphdr->dest = skb->udphdr.dest;
-		udphdr->len = htons(skb->data_len + sizeof(struct udphdr));
+		udphdr->source = UDP_SKB_CB(skb)->source;
+		udphdr->dest = UDP_SKB_CB(skb)->dest;
+		udphdr->len = htons(skb->len + sizeof(struct udphdr));
 		udphdr->check = 0;
 
 		p = (uint8_t *)(pkt + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr));
-		memcpy(p, skb->data, skb->data_len);
+		memcpy(p, skb->buf, skb->len);
 
-		ip4_output(sk, skb, pkt, pkt_len);
+		 if (UDP_SKB_CB(skb)->header.saddr == INADDR_ANY) {
+			saddr = inet_addr("10.0.0.1");
+		} else {
+			saddr = UDP_SKB_CB(skb)->header.saddr;
+		}
+		daddr = UDP_SKB_CB(skb)->header.daddr;
+
+		ip4_output(sk, skb, saddr, daddr, pkt, pkt_len);
+
+		pthread_spin_lock(&tx_lock);
+		dpdk_insert_txpkt(pid, m);
+		pthread_spin_unlock(&tx_lock);
 
 		list_del_init(&skb->list);
 		free_skb(skb);

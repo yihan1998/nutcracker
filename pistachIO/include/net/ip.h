@@ -14,7 +14,14 @@
 
 #define IP_DF   0x4000
 
-extern int ip4_input(uint8_t * pkt, int pkt_size, struct iphdr * iphdr);
-extern int ip4_output(struct sock * sk, struct sk_buff * skb, uint8_t * pkt, int pkt_len);
+struct inet_skb_parm {
+	uint32_t    saddr;
+	uint32_t    daddr;
+};
+
+#define IPCB(skb) ((struct inet_skb_parm *)((skb)->cb))
+
+extern int ip4_input(struct sk_buff * skb, struct iphdr * iphdr);
+extern int ip4_output(struct sock * sk, struct sk_buff * skb, uint32_t saddr, uint32_t daddr, uint8_t * pkt, int pkt_len);
 
 #endif  /* _IP_H_ */

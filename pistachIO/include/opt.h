@@ -13,8 +13,9 @@
 
 #define INET_DEBUG      DBG_OFF
 #define TCP_DEBUG       DBG_OFF
-#define UDP_DEBUG       DBG_ON
+#define UDP_DEBUG       DBG_OFF
 #define IP_DEBUG        DBG_OFF
+#define NF_DEBUG        DBG_ON
 
 #define IPC_DEBUG       DBG_OFF
 
@@ -26,7 +27,7 @@
 
 #define SCHED_DEBUG     DBG_OFF
 
-#define STACK_DEBUG     DBG_ON
+#define STACK_DEBUG     DBG_OFF
 
 #define WAIT_DEBUG      DBG_ON
 

@@ -122,7 +122,7 @@ void aio_dns_filter_fn(void * argp) {
     return;
 }
 
-int main(void) {
+int aio_dns_filter_init(void) {
     io_context_t ctx = 0;
     struct iocb cb, * cbs[1];
     int sockfd;
