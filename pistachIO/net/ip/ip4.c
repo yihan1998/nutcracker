@@ -8,10 +8,10 @@
 #include "net/tcp.h"
 #include "net/netns/netfilter.h"
 
-static int ip_route(struct sk_buff * skb) {
-    rte_ring_enqueue(fwd_cq, skb);
-    return NET_RX_SUCCESS;
-}
+// static int ip_route(struct sk_buff * skb) {
+//     rte_ring_enqueue(fwd_rq, skb);
+//     return NET_RX_SUCCESS;
+// }
 
 int ip4_input(struct sk_buff * skb, struct iphdr * iphdr) {
     uint16_t iphdr_hlen;
@@ -33,11 +33,12 @@ int ip4_input(struct sk_buff * skb, struct iphdr * iphdr) {
     IPCB(skb)->saddr = iphdr->saddr;
     IPCB(skb)->daddr = iphdr->daddr;
 
-    // nf_hook(NF_INET_PRE_ROUTING, skb);
+    nf_hook(NF_INET_PRE_ROUTING, skb);
 
-    if (ip_route(skb) == NET_RX_SUCCESS) {
-        return NET_RX_SUCCESS;
-    }
+    // if (ip_route(skb) == NET_RX_SUCCESS) {
+    //     return NET_RX_SUCCESS;
+    // }
+    return NET_RX_SUCCESS;
 
     switch (iphdr_protocol) {
         case IPPROTO_UDP:

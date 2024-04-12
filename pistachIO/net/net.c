@@ -21,8 +21,6 @@
 #include <rte_ethdev.h>
 #include <rte_tailq.h>
 
-struct rte_ring * fwd_cq;
-
 struct rte_hash * flow_table;
 
 struct rte_tailq_entry_head * pre_routing_table;
@@ -65,9 +63,7 @@ void * rxtx_module(void * arg) {
         
         clock_gettime(CLOCK_REALTIME, &curr);
         if (curr.tv_sec - last_log.tv_sec >= 1) {
-            pr_info("[RXTX] receive %d packets, send %d packets, pkt mempool avail: %d, skb mempool: %d\n", 
-                    sec_recv, sec_send, rte_mempool_avail_count(pkt_mempool), rte_mempool_avail_count(skb_mp));
-            // pr_info("[RXTX] receive %d packets, send %d packets\n", sec_recv, sec_send);
+            pr_info("[RXTX] receive %d packets, send %d packets\n", sec_recv, sec_send);
             sec_recv = sec_send = 0;
             last_log = curr;
         }
@@ -371,9 +367,6 @@ int __init net_init(void) {
     pthread_attr_t attr;
     cpu_set_t cpuset;
     int nr_rxtx_module = 4;
-
-    fwd_cq = rte_ring_create("fwd_cq", 1024, rte_socket_id(), 0);
-    assert(fwd_cq != NULL);
 
     struct rte_tailq_elem pre_routing_tailq = {
         .name = "pre_routing_table",

@@ -11,6 +11,7 @@ extern struct rte_mempool * socket_mp;
 extern struct rte_mempool * file_mp;
 extern struct rte_mempool * ioctx_mp;
 extern struct rte_mempool * iotask_mp;
+extern struct rte_mempool * nftask_mp;
 
 #define NR_FD_BLOCK 40
 #define NR_MAX_FILE (NR_FD_BLOCK * BITS_PER_TYPE(unsigned long))

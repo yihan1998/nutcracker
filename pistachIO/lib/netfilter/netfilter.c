@@ -47,6 +47,7 @@ static int __nf_register_net_hook(struct net * net, int pf, const struct nf_hook
 
     p->hook = reg->hook;
     p->priv = reg->priv;
+    p->cond = reg->cond;
 
     new_entry.data = (void *)p;
 	TAILQ_INSERT_TAIL(tbl, &new_entry, next);
