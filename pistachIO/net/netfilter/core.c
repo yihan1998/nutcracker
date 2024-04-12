@@ -4,7 +4,9 @@
 #include "kernel.h"
 #include "opt.h"
 #include "printk.h"
+#include "fs/fs.h"
 #include "linux/netfilter.h"
+#include "kernel/sched.h"
 #include "net/net_namespace.h"
 
 int nf_hook(unsigned int hook, struct sk_buff * skb) {
@@ -35,8 +37,16 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
 
 	TAILQ_FOREACH(entry, tbl, next) {
         p = (struct nf_hook_entry *)entry->data;
-        if (p->hook) {
-            p->hook(p->priv, skb, NULL);
+        if (p->cond) {
+            if (p->cond(skb) == NF_ACCEPT) {
+                struct nfcb_task_struct * new_entry;
+                rte_mempool_get(nftask_mp, (void **)&new_entry);
+                if (new_entry) {
+                    new_entry->entry = *p;
+                    new_entry->skb = skb;
+                    rte_ring_enqueue(fwd_rq, new_entry);
+                }
+            }
         } else {
             pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv)
         }

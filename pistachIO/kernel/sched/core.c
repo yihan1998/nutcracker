@@ -10,11 +10,15 @@
 #include "printk.h"
 #include "iocontext.h"
 #include "kernel.h"
+#include "linux/netfilter.h"
 #include "kernel/cpumask.h"
 #include "kernel/threads.h"
 #include "kernel/sched.h"
 #include "net/net.h"
+#include "net/skbuff.h"
 #include "fs/fs.h"
+
+#define MAX_WORK_BURST  32
 
 unsigned int nr_cpu_ids = NR_CPUS;
 
@@ -22,6 +26,8 @@ pthread_t worker_ids[NR_CPUS];
 
 struct rte_ring * worker_rq;
 struct rte_ring * worker_cq;
+struct rte_ring * fwd_rq;
+struct rte_ring * fwd_cq;
 
 struct rte_mempool * task_mp;
 
@@ -41,6 +47,7 @@ struct task_struct * create_new_task(void * argp, void (*func)(void *)) {
 }
 
 void * worker_main(void * arg) {
+    int nb_recv = 0;
     // int sec_count = 0;
     // struct timespec curr, last_log;
 
@@ -48,7 +55,8 @@ void * worker_main(void * arg) {
     // curr = last_log;
 
     while(1) {
-        struct iocb_task_struct * iocb_task = NULL;
+        // struct iocb_task_struct tasks[MAX_WORK_BURST];
+        struct nfcb_task_struct * t, * tasks[MAX_WORK_BURST];
 
         // clock_gettime(CLOCK_REALTIME, &curr);
         // if (curr.tv_sec - last_log.tv_sec >= 1) {
@@ -58,13 +66,25 @@ void * worker_main(void * arg) {
         // }
 
         while (rte_ring_count(worker_rq) != 0) {
-            if (rte_ring_dequeue(worker_rq, (void **)&iocb_task) == 0) {
-                void * argp = iocb_task->argp;
-                void (*func)(void *) = iocb_task->func;
-                rte_mempool_put(iotask_mp, iocb_task);
-                func(argp);
-                // sec_count++;
+        //     if (rte_ring_dequeue(worker_rq, (void **)&iocb_task) == 0) {
+        //         void * argp = iocb_task->argp;
+        //         void (*func)(void *) = iocb_task->func;
+        //         rte_mempool_put(iotask_mp, iocb_task);
+        //         func(argp);
+        //         // sec_count++;
+        //     }
+        }
+
+        // work_cnt = rte_ring_dequeue_burst(worker_rq, (void **)tmp_pkts, MAX_WORK_BURST, NULL);
+        nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, MAX_WORK_BURST, NULL);
+        if (nb_recv) {
+            for (int i = 0; i < nb_recv; i++) {
+                t = tasks[i];
+                if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
+                    rte_ring_enqueue(fwd_cq, t->skb);
+                }
             }
+    		rte_mempool_put_bulk(nftask_mp, (void *)tasks, nb_recv);
         }
     }
     return NULL;
@@ -79,6 +99,12 @@ int __init worker_init(void) {
 
     worker_cq = rte_ring_create("worker_cq", 1024, rte_socket_id(), 0);
     assert(worker_cq != NULL);
+
+    fwd_rq = rte_ring_create("fwd_rq", 1024, rte_socket_id(), 0);
+    assert(fwd_rq != NULL);
+
+    fwd_cq = rte_ring_create("fwd_cq", 1024, rte_socket_id(), 0);
+    assert(fwd_cq != NULL);
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     // assert(task_mp != NULL);

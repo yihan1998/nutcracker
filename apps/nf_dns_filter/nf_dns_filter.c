@@ -9,6 +9,21 @@
 #include <linux/udp.h>
 #include <net/skbuff.h>
 
+static unsigned int check_cond(struct sk_buff *skb) {
+    struct ethhdr * ethhdr;
+    struct iphdr * iphdr;
+
+    if (!skb) return NF_ACCEPT;
+
+    ethhdr = (struct ethhdr *)skb->ptr;
+    iphdr = (struct iphdr *)&ethhdr[1];
+
+    // Log destination IP address of the outgoing packet
+    // printf("Outgoing packet to %pI4\n", iphdr->daddr);
+
+    return NF_ACCEPT; // Accept the packet
+}
+
 // Function to be called by hook
 static unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state) {
     struct ethhdr * ethhdr;
@@ -26,6 +41,7 @@ static unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_h
 }
 
 static struct nf_hook_ops nfho = {
+    .cond       = check_cond,
     .hook       = hook_func,
     .hooknum    = NF_INET_PRE_ROUTING,
     .pf         = NFPROTO_INET,

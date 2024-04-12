@@ -31,6 +31,7 @@ struct nf_hook_state {
 	int (*okfn)(struct net *, struct sock *, struct sk_buff *);
 };
 
+typedef unsigned int nf_condfn(struct sk_buff *skb);
 typedef unsigned int nf_hookfn(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
 
 struct nf_hook_ops {
@@ -38,7 +39,7 @@ struct nf_hook_ops {
 	nf_hookfn   *hook;
 	struct net_device   *dev;
 	void        *priv;
-	void        *cond;
+	nf_condfn	*cond;
 	uint8_t     pf;
 	unsigned int    hooknum;
 	int         priority;
@@ -46,12 +47,18 @@ struct nf_hook_ops {
 
 struct nf_hook_entry {
 	nf_hookfn   *hook;
+	nf_condfn	*cond;
 	void        *priv;
 };
 
 struct nf_hook_entries {
 	uint16_t num_hook_entries;
 	struct nf_hook_entry hooks[];
+};
+
+struct nfcb_task_struct {
+	struct nf_hook_entry entry;
+	struct sk_buff * skb;
 };
 
 int nf_register_net_hook(struct net *net, const struct nf_hook_ops *ops);
