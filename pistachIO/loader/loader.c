@@ -83,7 +83,7 @@ int compile_and_run(const char * filepath) {
 #else
     pr_err("Unknown architecture!\n");
 #endif
-    tcc_add_include_path(s, "/local/yihan/Nutcracker-dev/pistachIO/include/");
+    tcc_add_include_path(s, "/home/ubuntu/Nutcracker/pistachIO/include/");
     tcc_add_include_path(s, "/usr/include");
 
     search_files(filepath, input_file, &nr_file);

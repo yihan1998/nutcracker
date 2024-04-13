@@ -8,6 +8,7 @@
 #include "linux/netfilter.h"
 #include "kernel/sched.h"
 #include "net/net_namespace.h"
+#include "net/net.h"
 
 int nf_hook(unsigned int hook, struct sk_buff * skb) {
     struct nf_hook_entry * p;
@@ -34,23 +35,48 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
             pr_warn("Unkown hooknum!\n");
             return 0;
     }
-
+#if 0
 	TAILQ_FOREACH(entry, tbl, next) {
         p = (struct nf_hook_entry *)entry->data;
         if (p->cond) {
             if (p->cond(skb) == NF_ACCEPT) {
-                struct nfcb_task_struct * new_entry;
+                struct nfcb_task_struct * new_entry = NULL;
+                do {
+                    rte_mempool_get(nftask_mp, (void **)&new_entry);
+                    if (new_entry) {
+                        new_entry->entry = *p;
+                        new_entry->skb = skb;
+                        while (rte_ring_enqueue(fwd_rq, new_entry) < 0) {
+                            // pr_debug(NF_DEBUG, "Failed to enqueue into fwd RQ! Put nftask %p back to mp...\n", new_entry);
+                            // rte_mempool_put(nftask_mp, new_entry);
+                            // return NET_RX_DROP;
+                        }
+                    }
+                } while (!new_entry);
+            }
+        } else {
+            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);
+        }
+    }
+#endif
+    TAILQ_FOREACH(entry, tbl, next) {
+        p = (struct nf_hook_entry *)entry->data;
+        if (p->cond) {
+            if (p->cond(skb) == NF_ACCEPT) {
+                struct nfcb_task_struct * new_entry = NULL;
                 rte_mempool_get(nftask_mp, (void **)&new_entry);
                 if (new_entry) {
                     new_entry->entry = *p;
                     new_entry->skb = skb;
-                    rte_ring_enqueue(fwd_rq, new_entry);
+                    while (rte_ring_enqueue(fwd_rq, new_entry) < 0);
+                } else {
+                    return NET_RX_DROP;
                 }
             }
         } else {
-            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv)
+            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);
         }
     }
 
-    return 0;
+    return NET_RX_SUCCESS;
 }

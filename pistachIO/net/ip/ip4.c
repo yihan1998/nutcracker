@@ -33,7 +33,9 @@ int ip4_input(struct sk_buff * skb, struct iphdr * iphdr) {
     IPCB(skb)->saddr = iphdr->saddr;
     IPCB(skb)->daddr = iphdr->daddr;
 
-    nf_hook(NF_INET_PRE_ROUTING, skb);
+    if (nf_hook(NF_INET_PRE_ROUTING, skb) == NET_RX_DROP) {
+        return NET_RX_DROP;
+    }
 
     // if (ip_route(skb) == NET_RX_SUCCESS) {
     //     return NET_RX_SUCCESS;

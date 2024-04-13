@@ -16,6 +16,7 @@
 #include "kernel/sched.h"
 #include "net/net.h"
 #include "net/skbuff.h"
+#include "net/dpdk_module.h"
 #include "fs/fs.h"
 
 #define MAX_WORK_BURST  32
@@ -65,7 +66,7 @@ void * worker_main(void * arg) {
         //     last_log = curr;
         // }
 
-        while (rte_ring_count(worker_rq) != 0) {
+        // while (rte_ring_count(worker_rq) != 0) {
         //     if (rte_ring_dequeue(worker_rq, (void **)&iocb_task) == 0) {
         //         void * argp = iocb_task->argp;
         //         void (*func)(void *) = iocb_task->func;
@@ -73,7 +74,7 @@ void * worker_main(void * arg) {
         //         func(argp);
         //         // sec_count++;
         //     }
-        }
+        // }
 
         // work_cnt = rte_ring_dequeue_burst(worker_rq, (void **)tmp_pkts, MAX_WORK_BURST, NULL);
         nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, MAX_WORK_BURST, NULL);
@@ -81,7 +82,7 @@ void * worker_main(void * arg) {
             for (int i = 0; i < nb_recv; i++) {
                 t = tasks[i];
                 if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
-                    rte_ring_enqueue(fwd_cq, t->skb);
+                    while (rte_ring_enqueue(fwd_cq, t->skb) < 0);
                 }
             }
     		rte_mempool_put_bulk(nftask_mp, (void *)tasks, nb_recv);
@@ -94,16 +95,16 @@ int __init worker_init(void) {
     pthread_attr_t attr;
     cpu_set_t cpuset;
 
-    worker_rq = rte_ring_create("worker_rq", 1024, rte_socket_id(), 0);
+    worker_rq = rte_ring_create("worker_rq", 2048, rte_socket_id(), 0);
     assert(worker_rq != NULL);
 
-    worker_cq = rte_ring_create("worker_cq", 1024, rte_socket_id(), 0);
+    worker_cq = rte_ring_create("worker_cq", 2048, rte_socket_id(), 0);
     assert(worker_cq != NULL);
 
-    fwd_rq = rte_ring_create("fwd_rq", 1024, rte_socket_id(), 0);
+    fwd_rq = rte_ring_create("fwd_rq", 2048, rte_socket_id(), 0);
     assert(fwd_rq != NULL);
 
-    fwd_cq = rte_ring_create("fwd_cq", 1024, rte_socket_id(), 0);
+    fwd_cq = rte_ring_create("fwd_cq", 2048, rte_socket_id(), 0);
     assert(fwd_cq != NULL);
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);

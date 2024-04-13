@@ -184,17 +184,6 @@ uint32_t dpdk_recv_pkts(int pid, struct rte_mbuf ** pkts) {
     return rte_eth_rx_burst((uint8_t)pid, 0, pkts, MAX_PKT_BURST);
 }
 
-void dpdk_recv_done(struct rte_mbuf ** pkts, int len) {
-#if RTE_VERSION < RTE_VERSION_NUM(20, 11, 0, 0)
-    for (int i = 0; i < len; i++) {
-        rte_pktmbuf_free(pkts[i]);
-        RTE_MBUF_PREFETCH_TO_FREE(pkts[i+1]);
-    }
-#else
-    rte_pktmbuf_free_bulk(pkts, len);
-#endif
-}
-
 struct rte_mbuf * dpdk_alloc_txpkt(int pkt_size) {
     struct rte_mbuf * tx_pkt = rte_pktmbuf_alloc(pkt_mempool);
     if (!tx_pkt) return NULL;
