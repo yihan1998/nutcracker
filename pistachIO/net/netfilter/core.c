@@ -7,6 +7,7 @@
 #include "fs/fs.h"
 #include "linux/netfilter.h"
 #include "kernel/sched.h"
+#include "net/dpdk_module.h"
 #include "net/net_namespace.h"
 #include "net/net.h"
 
@@ -68,7 +69,12 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
                 if (new_entry) {
                     new_entry->entry = *p;
                     new_entry->skb = skb;
-                    while (rte_ring_enqueue(fwd_rq, new_entry) < 0);
+                    // while (rte_ring_enqueue(fwd_rq, new_entry) < 0);
+                    if (rte_ring_enqueue(fwd_rq, new_entry) < 0) {
+                        rte_mempool_put(nftask_mp, new_entry);
+                        rte_pktmbuf_free(skb->m);
+                        rte_mempool_put(skb_mp, skb);
+                    }
                 } else {
                     return NET_RX_DROP;
                 }
