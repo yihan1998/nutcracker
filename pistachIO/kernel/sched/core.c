@@ -94,16 +94,16 @@ int __init worker_init(void) {
     pthread_attr_t attr;
     cpu_set_t cpuset;
 
-    worker_rq = rte_ring_create("worker_rq", 1024, rte_socket_id(), 0);
+    worker_rq = rte_ring_create("worker_rq", 4096, rte_socket_id(), 0);
     assert(worker_rq != NULL);
 
-    worker_cq = rte_ring_create("worker_cq", 1024, rte_socket_id(), 0);
+    worker_cq = rte_ring_create("worker_cq", 4096, rte_socket_id(), 0);
     assert(worker_cq != NULL);
 
-    fwd_rq = rte_ring_create("fwd_rq", 1024, rte_socket_id(), 0);
+    fwd_rq = rte_ring_create("fwd_rq", 4096, rte_socket_id(), 0);
     assert(fwd_rq != NULL);
 
-    fwd_cq = rte_ring_create("fwd_cq", 1024, rte_socket_id(), 0);
+    fwd_cq = rte_ring_create("fwd_cq", 4096, rte_socket_id(), 0);
     assert(fwd_cq != NULL);
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
