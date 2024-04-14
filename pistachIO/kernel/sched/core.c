@@ -65,7 +65,7 @@ void * worker_main(void * arg) {
         //     last_log = curr;
         // }
 
-        while (rte_ring_count(worker_rq) != 0) {
+        // while (rte_ring_count(worker_rq) != 0) {
         //     if (rte_ring_dequeue(worker_rq, (void **)&iocb_task) == 0) {
         //         void * argp = iocb_task->argp;
         //         void (*func)(void *) = iocb_task->func;
@@ -73,7 +73,7 @@ void * worker_main(void * arg) {
         //         func(argp);
         //         // sec_count++;
         //     }
-        }
+        // }
 
         // work_cnt = rte_ring_dequeue_burst(worker_rq, (void **)tmp_pkts, MAX_WORK_BURST, NULL);
         nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, MAX_WORK_BURST, NULL);
@@ -81,7 +81,7 @@ void * worker_main(void * arg) {
             for (int i = 0; i < nb_recv; i++) {
                 t = tasks[i];
                 if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
-                    rte_ring_enqueue(fwd_cq, t->skb);
+                    while (rte_ring_enqueue(fwd_cq, t->skb) < 0);
                 }
             }
     		rte_mempool_put_bulk(nftask_mp, (void *)tasks, nb_recv);

@@ -172,7 +172,7 @@ void * tx_module(void * arg) {
     int nb_send = 0;
     struct sk_buff * skb;
 	struct rte_mbuf * m;
-	uint8_t * pkt;
+	// uint8_t * pkt;
     int sec_count = 0;
     struct timespec curr, last_log;
 
@@ -210,20 +210,37 @@ void * tx_module(void * arg) {
             }
         }
 
-        count = rte_ring_count(fwd_cq);
-        for (int i = 0; i < count; i++) {
-            if (rte_ring_dequeue(fwd_cq, (void **)&skb) == 0) {
-                m = dpdk_alloc_txpkt(skb->len);
-                if (!m) {
-                    break;
-                }
-                pkt = rte_pktmbuf_mtod(m, uint8_t *);
-		        memcpy(pkt, skb->ptr, skb->len);
+        // count = rte_ring_count(fwd_cq);
+        // for (int i = 0; i < count; i++) {
+        //     if (rte_ring_dequeue(fwd_cq, (void **)&skb) == 0) {
+        //         m = dpdk_alloc_txpkt(skb->len);
+        //         if (!m) {
+        //             break;
+        //         }
+        //         pkt = rte_pktmbuf_mtod(m, uint8_t *);
+		//         memcpy(pkt, skb->ptr, skb->len);
+        //         pthread_spin_lock(&tx_lock);
+        //         dpdk_insert_txpkt(pid, m);
+        //         pthread_spin_unlock(&tx_lock);
+        // 		free_skb(skb);
+        //     }
+        // }
+
+        int ret;
+        struct sk_buff * skbs[32];
+        int nb_recv = rte_ring_dequeue_burst(fwd_cq, (void **)skbs, 32, NULL);
+        if (nb_recv) {
+            for (int i = 0; i < nb_recv; i++) {
+                skb = skbs[i];
+                m = skb->m;
                 pthread_spin_lock(&tx_lock);
-                dpdk_insert_txpkt(pid, m);
+                ret = dpdk_insert_txpkt(pid, m);
                 pthread_spin_unlock(&tx_lock);
-        		free_skb(skb);
+                if (ret < 0) {
+                    rte_pktmbuf_free(m);
+                }
             }
+    		rte_mempool_put_bulk(skb_mp, (void *)skbs, nb_recv);
         }
 
         pthread_spin_lock(&tx_lock);

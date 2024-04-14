@@ -7,6 +7,7 @@
 #include "fs/fs.h"
 #include "linux/netfilter.h"
 #include "kernel/sched.h"
+#include "net/net.h"
 #include "net/net_namespace.h"
 
 int nf_hook(unsigned int hook, struct sk_buff * skb) {
@@ -39,16 +40,18 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
         p = (struct nf_hook_entry *)entry->data;
         if (p->cond) {
             if (p->cond(skb) == NF_ACCEPT) {
-                struct nfcb_task_struct * new_entry;
+                struct nfcb_task_struct * new_entry = NULL;
                 rte_mempool_get(nftask_mp, (void **)&new_entry);
                 if (new_entry) {
                     new_entry->entry = *p;
                     new_entry->skb = skb;
-                    rte_ring_enqueue(fwd_rq, new_entry);
+                    while (rte_ring_enqueue(fwd_rq, new_entry) < 0);
+                } else {
+                    return NET_RX_DROP;
                 }
             }
         } else {
-            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv)
+            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);
         }
     }
 
