@@ -6,6 +6,9 @@
 
 #include "linux/netfilter_def.h"
 
+#define NF_MISS		0
+#define NF_MATCH	1
+
 /* Responses from hook functions. */
 #define NF_DROP     0
 #define NF_ACCEPT   1

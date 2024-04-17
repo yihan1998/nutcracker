@@ -83,6 +83,8 @@ int compile_and_run(const char * filepath) {
 #else
     pr_err("Unknown architecture!\n");
 #endif
+    // tcc_add_library_path(s, "/usr/lib/aarch64-linux-gnu/");
+    // tcc_add_library(s, "resolv");
     tcc_add_include_path(s, "/home/ubuntu/Nutcracker/pistachIO/include/");
     tcc_add_include_path(s, "/usr/include");
 
@@ -90,7 +92,6 @@ int compile_and_run(const char * filepath) {
 
     tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
     for (int i = 0; i < nr_file; i++) {
-        // file = fopen("/local/yihan/Nutcracker-dev/tests/socket/socket.c", "rb");
         file = fopen(input_file[i], "rb");
         if (file == NULL) {
             pr_err("Error opening input file\n");
@@ -103,7 +104,7 @@ int compile_and_run(const char * filepath) {
         rewind(file); // Go back to the beginning of the file
 
         // Allocate memory to store the entire file
-        buffer = (char *)malloc(len + 1);
+        buffer = (char *)calloc(len + 1, sizeof(char));
         if (buffer == NULL) {
             pr_err("Memory allocation failed\n");
             fclose(file);
@@ -124,13 +125,16 @@ int compile_and_run(const char * filepath) {
         }
         buffer[bytes_read] = '\0'; // For text files, null-terminate the string
 
-        tcc_compile_string(s, buffer);
+        if (tcc_compile_string(s, buffer) < 0) {
+            pr_err("Could not compile tcc code\n");
+        }
 
         free(buffer);
     }
 
     // Relocate the compiled program into memory
-    if (tcc_relocate(s, TCC_RELOCATE_AUTO) < 0) {
+    // if (tcc_relocate(s, TCC_RELOCATE_AUTO) < 0) {
+    if (tcc_relocate(s) < 0) {
         pr_err("Could not relocate tcc code\n");
         return 1;
     }

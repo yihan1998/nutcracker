@@ -65,9 +65,9 @@ void * rxtx_module(void * arg) {
         
         clock_gettime(CLOCK_REALTIME, &curr);
         if (curr.tv_sec - last_log.tv_sec >= 1) {
-            pr_info("[RXTX] receive %d packets, send %d packets, pkt mp: %d, skb mp: %d, nftask mp: %d\n", 
-                    sec_recv, sec_send, rte_mempool_avail_count(pkt_mempool), rte_mempool_avail_count(skb_mp), rte_mempool_avail_count(nftask_mp));
-            // pr_info("[RXTX] receive %d packets, send %d packets\n", sec_recv, sec_send);
+            // pr_info("[RXTX] receive %d packets, send %d packets, pkt mp: %d, skb mp: %d, nftask mp: %d\n", 
+            //         sec_recv, sec_send, rte_mempool_avail_count(pkt_mempool), rte_mempool_avail_count(skb_mp), rte_mempool_avail_count(nftask_mp));
+            pr_info("[RXTX] receive %d packets, send %d packets\n", sec_recv, sec_send);
             sec_recv = sec_send = 0;
             last_log = curr;
         }

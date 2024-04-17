@@ -49,6 +49,11 @@ struct task_struct * create_new_task(void * argp, void (*func)(void *)) {
 
 void * worker_main(void * arg) {
     int nb_recv = 0;
+    worker_ctx = (struct worker_context *)arg;
+#ifdef CONFIG_DOCA
+    pr_info("Initialze DOCA percore context...\n");
+    doca_percore_init(worker_ctx);
+#endif  /* CONFIG_DOCA */
     // int sec_count = 0;
     // struct timespec curr, last_log;
 
@@ -83,9 +88,10 @@ void * worker_main(void * arg) {
                 t = tasks[i];
                 if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
                     // while (rte_ring_enqueue(fwd_cq, t->skb) < 0);
-                    if (rte_ring_enqueue(fwd_cq, t->skb) < 0) {
-                        rte_pktmbuf_free(t->skb->m);
-                        rte_mempool_put(skb_mp, t->skb);
+                    while (rte_ring_enqueue(fwd_cq, t->skb) < 0) {
+                        printf("Failed to enqueue into fwq CQ\n");
+                        // rte_pktmbuf_free(t->skb->m);
+                        // rte_mempool_put(skb_mp, t->skb);
                     }
                 }
             }
@@ -122,6 +128,13 @@ int __init worker_init(void) {
     for (int i = 0; i < nr_cpu_ids - 4; i++) {
         CPU_ZERO(&cpuset);
         CPU_SET(i + 4, &cpuset);
+
+        struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", i);
+        }
+#endif
         // Set the CPU affinity in the thread attributes
         if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
             perror("pthread_attr_setaffinity_np");
@@ -129,7 +142,7 @@ int __init worker_init(void) {
         }
 
         // Create the RX path
-        if (pthread_create(&worker_ids[i], &attr, worker_main, NULL) != 0) {
+        if (pthread_create(&worker_ids[i], &attr, worker_main, ctx) != 0) {
             perror("Create RX path failed!");
             exit(EXIT_FAILURE);
         }

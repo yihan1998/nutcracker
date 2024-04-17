@@ -63,21 +63,23 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
     TAILQ_FOREACH(entry, tbl, next) {
         p = (struct nf_hook_entry *)entry->data;
         if (p->cond) {
-            if (p->cond(skb) == NF_ACCEPT) {
+            if (p->cond(skb) == NF_MATCH) {
                 struct nfcb_task_struct * new_entry = NULL;
-                rte_mempool_get(nftask_mp, (void **)&new_entry);
-                if (new_entry) {
-                    new_entry->entry = *p;
-                    new_entry->skb = skb;
-                    // while (rte_ring_enqueue(fwd_rq, new_entry) < 0);
-                    if (rte_ring_enqueue(fwd_rq, new_entry) < 0) {
-                        rte_mempool_put(nftask_mp, new_entry);
-                        rte_pktmbuf_free(skb->m);
-                        rte_mempool_put(skb_mp, skb);
+                do {
+                    rte_mempool_get(nftask_mp, (void **)&new_entry);
+                    if (new_entry) {
+                        new_entry->entry = *p;
+                        new_entry->skb = skb;
+                        while (rte_ring_enqueue(fwd_rq, new_entry) < 0) {
+                            printf("Failed to enqueue into fwq RQ\n");
+                        }
+                        // if (rte_ring_enqueue(fwd_rq, new_entry) < 0) {
+                        //     rte_mempool_put(nftask_mp, new_entry);
+                        //     rte_pktmbuf_free(skb->m);
+                        //     rte_mempool_put(skb_mp, skb);
+                        // }
                     }
-                } else {
-                    return NET_RX_DROP;
-                }
+                } while (!new_entry);
             }
         } else {
             pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);

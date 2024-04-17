@@ -1,24 +1,28 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
-// #include <regex.h>
-// #include <arpa/inet.h>
-// #include <linux/kernel.h>
-// #include <linux/module.h>
-// #include <linux/netfilter.h>
-// #include <linux/netfilter_ipv4.h>
-// #include <linux/if_ether.h>
-// #include <linux/ip.h>
-// #include <linux/udp.h>
-// #include <net/skbuff.h>
-#if 0
+#include <string.h>
+#include <regex.h>
+#include <resolv.h>
+#include <arpa/inet.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/netfilter.h>
+#include <linux/netfilter_ipv4.h>
+#include <linux/if_ether.h>
+#include <linux/ip.h>
+#include <linux/udp.h>
+#include <net/skbuff.h>
+
 #define MAX_RULES 100
 #define MAX_REGEX_LENGTH 256
 
+/* DOCA compatible */
 regex_t compiled_rules[MAX_RULES];
 int rule_count = 0;
 
 int load_regex_rules() {
-    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns_filter/rule.conf", "r");
+    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns/dns_filter_rules.txt", "r");
     if (!file) {
         perror("Failed to open file");
         return -1;
@@ -31,7 +35,7 @@ int load_regex_rules() {
             regex[strlen(regex) - 1] = '\0';  // Remove newline character
         }
 
-        printf("Regex rule: %s\n", regex);
+        printf("Regex rule %d: %s\n", rule_count, regex);
 
         ret = regcomp(&compiled_rules[rule_count], regex, REG_EXTENDED);
         if (ret) {
@@ -45,8 +49,23 @@ int load_regex_rules() {
     fclose(file);
     return 0;
 }
-#endif
-#if 0
+
+int find_matching_rule(const char * domain_name) {
+    int result;
+
+    // Iterate through all compiled rules
+    for (int i = 0; i < rule_count; i++) {
+        result = regexec(&compiled_rules[i], domain_name, 0, NULL, 0);
+        if (result == 0) {
+            // printf("Match found with rule %d: %s\n", i, domain_name);
+            return i;  // Return the index of the first matching rule
+        }
+    }
+
+    // printf("No match found for: %s\n", domain_name);
+    return -1;  // Return -1 if no match is found
+}
+
 static unsigned int check_cond(struct sk_buff *skb) {
     struct ethhdr * ethhdr;
     struct iphdr * iphdr;
@@ -93,16 +112,16 @@ void print_domain_name(const unsigned char * buffer, int* position, unsigned cha
 }
 
 // Parse and print details from a DNS query
-void parse_dns_query(const unsigned char* buffer, int size) {
+int parse_dns_query(const unsigned char * buffer, int size) {
     unsigned char domain_name[256] = {0};
-    if (size < sizeof(struct dns_header)) {
-        printf("Buffer too small for DNS header\n");
-        return;
-    }
     // Cast the buffer to the DNS header struct
     struct dns_header* dns = (struct dns_header*)buffer;
     int position = sizeof(struct dns_header); // Position in the buffer
     print_domain_name(buffer, &position, domain_name);
+    if (find_matching_rule(domain_name) < 0) {
+        return NF_MISS;
+    }
+    return NF_MATCH;
 }
 
 // Function to be called by hook
@@ -114,6 +133,7 @@ static unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_h
     struct udphdr * udphdr;
 	uint16_t ulen, len;
 	uint8_t * data;
+	ns_msg handle;
 
     ethhdr = (struct ethhdr *)skb->ptr;
 
@@ -126,9 +146,7 @@ static unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_h
 	len = ulen - sizeof(struct udphdr);
 	data = (uint8_t *)udphdr + sizeof(struct udphdr);
 
-    // parse_dns_query(data, len);
-
-    return NF_MATCH; // Accept the packet
+    return parse_dns_query(data, len);
 }
 
 static struct nf_hook_ops nfho = {
@@ -138,42 +156,10 @@ static struct nf_hook_ops nfho = {
     .pf         = NFPROTO_INET,
 };
 
-int nf_dns_filter_init(void) {
-    // if (load_regex_rules() != 0) {
-    //     return -1;
-    // }
+int nf_dns_init(void) {
+    if (load_regex_rules() != 0) {
+        return -1;
+    }
     nf_register_net_hook(NULL, &nfho);
-    return 0;
-}
-#endif
-int nf_dns_filter_init(void) {
-    // regex_t regex;
-    // int result;
-    // char *pattern = "^[a-zA-Z]+[0-9]*$";  // Regex pattern: one or more letters followed by zero or more numbers
-    // char *test_string = "Hello123";
-
-    // // Compile the regular expression
-    // result = regcomp(&regex, pattern, REG_EXTENDED);
-    // if (result) {
-    //     fprintf(stderr, "Could not compile regex\n");
-    //     exit(1);
-    // }
-
-    // // Execute regular expression
-    // result = regexec(&regex, test_string, 0, NULL, 0);
-    // if (!result) {
-    //     printf("'%s' matches the pattern '%s'\n", test_string, pattern);
-    // } else if (result == REG_NOMATCH) {
-    //     printf("'%s' does not match the pattern '%s'\n", test_string, pattern);
-    // } else {
-    //     char error_message[100];
-    //     regerror(result, &regex, error_message, sizeof(error_message));
-    //     fprintf(stderr, "Regex match failed: %s\n", error_message);
-    //     exit(1);
-    // }
-
-    // // Free memory allocated to the pattern buffer by regcomp
-    // regfree(&regex);
-
     return 0;
 }

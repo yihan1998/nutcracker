@@ -11,8 +11,9 @@
 
 #include "opt.h"
 #include "printk.h"
+#include "libc.h"
+#include "entry/syscall.h"
 #include "ipc/ipc.h"
-// #include "kernel/threads.h"
 #include "net/dpdk_module.h"
 #include "loader/loader.h"
 #include "net/net.h"
@@ -20,6 +21,7 @@
 #include "fs/fs.h"
 #include "fs/aio.h"
 #include "kernel/sched.h"
+#include "doca/context.h"
 
 #define MAX_EVENTS  1024
 
@@ -186,6 +188,11 @@ int main(int argc, char ** argv) {
     pr_info("init: starting DPDK...\n");
     dpdk_init(argc, argv);
 
+#ifdef CONFIG_DOCA_REGEX
+    pr_info("init: initializing DOCA...\n");
+    doca_init();
+#endif
+
     kernel_early_boot = false;
 
     pr_info("init: initializing fs...\n");
@@ -267,6 +274,13 @@ int main(int argc, char ** argv) {
     // Call the function
     my_function();
 #endif
+
+    pr_info("init: initializing LIBC...\n");
+    libc_hook_init();
+
+    pr_info("init: initializing SYSCALL...\n");
+    syscall_hook_init();
+
     /* Now enter the main loop */
     pr_info("init: starting pistachIO loop...\n");
     pistachio_loop();

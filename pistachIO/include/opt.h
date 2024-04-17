@@ -20,7 +20,7 @@
 #define IPC_DEBUG       DBG_OFF
 
 #define SOCK_DEBUG      DBG_ON
-#define SOCKET_DEBUG    DBG_OFF
+#define SOCKET_DEBUG    DBG_ON
 
 #define FS_DEBUG        DBG_OFF
 #define FILE_DEBUG      DBG_OFF
@@ -30,5 +30,7 @@
 #define STACK_DEBUG     DBG_OFF
 
 #define WAIT_DEBUG      DBG_ON
+
+#define REGEX_DEBUG     DBG_ON
 
 #endif  /* _OPT_H_ */
