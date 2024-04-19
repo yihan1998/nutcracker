@@ -38,9 +38,10 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
 
 	TAILQ_FOREACH(entry, tbl, next) {
         p = (struct nf_hook_entry *)entry->data;
-        if (p->cond) {
-            if (p->cond(skb) == NF_ACCEPT) {
+        // if (p->cond) {
+        //     if (p->cond(skb) == NF_ACCEPT) {
                 struct nfcb_task_struct * new_entry = NULL;
+            do {
                 rte_mempool_get(nftask_mp, (void **)&new_entry);
                 if (new_entry) {
                     new_entry->entry = *p;
@@ -49,10 +50,11 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
                 } else {
                     return NET_RX_DROP;
                 }
-            }
-        } else {
-            pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);
-        }
+            } while (!new_entry);
+        //     }
+        // } else {
+        //     pr_debug(NF_DEBUG, "Entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv);
+        // }
     }
 
     return 0;
