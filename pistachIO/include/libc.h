@@ -6,6 +6,10 @@
 
 extern bool libc_hooked;
 
+#ifndef _REGEX_NELTS
+#define _REGEX_NELTS(x)
+#endif
+
 extern int libc_hook_init(void);
 
 extern int (*libc_regcomp)(regex_t *_Restrict_ __preg,

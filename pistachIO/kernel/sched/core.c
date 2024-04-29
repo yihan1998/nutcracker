@@ -23,7 +23,11 @@
 
 unsigned int nr_cpu_ids = NR_CPUS;
 
+DEFINE_PER_CPU(struct worker_context *, worker_ctx);
+
 pthread_t worker_ids[NR_CPUS];
+
+void * worker_main(void * arg);
 
 DEFINE_PER_CPU(unsigned int, cpu_id);
 

@@ -79,13 +79,22 @@ int compile_and_run(const char * filepath) {
     tcc_set_lib_path(s, "/usr/lib/x86_64-linux-gnu/tcc");
 #elif defined(__arm__) || defined(__aarch64__)
     // tcc_set_lib_path(s, "/usr/local/lib");
+#ifdef CONFIG_BLUEFIELD2
     tcc_set_lib_path(s, "/usr/lib/aarch64-linux-gnu/tcc");
+#endif   /* CONFIG_BLUEFIELD2 */
+#ifdef CONFIG_OCTEON
+    tcc_set_lib_path(s, "/usr/local/lib/tcc");
+#endif  /* CONFIG_OCTEON */
 #else
     pr_err("Unknown architecture!\n");
 #endif
     // tcc_add_library_path(s, "/usr/lib/aarch64-linux-gnu/");
-    // tcc_add_library(s, "resolv");
+#ifdef CONFIG_BLUEFIELD2
     tcc_add_include_path(s, "/home/ubuntu/Nutcracker/pistachIO/include/");
+#endif   /* CONFIG_BLUEFIELD2 */
+#ifdef CONFIG_OCTEON
+    tcc_add_include_path(s, "/root/Nutcracker/pistachIO/include/");
+#endif  /* CONFIG_OCTEON */
     tcc_add_include_path(s, "/usr/include");
 
     search_files(filepath, input_file, &nr_file);

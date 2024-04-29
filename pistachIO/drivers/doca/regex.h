@@ -32,6 +32,14 @@ struct doca_regex_ctx {
 
 extern struct doca_regex_config doca_regex_cfg;
 
+#ifndef _REGEX_NELTS
+#define _REGEX_NELTS(x)
+#endif
+
+extern int doca_regcomp(regex_t *_Restrict_ __preg, const char *_Restrict_ __pattern, int __cflags);
+extern int doca_regexec(const regex_t *_Restrict_ __preg, const char *_Restrict_ __String, size_t __nmatch,
+			regmatch_t __pmatch[_Restrict_arr_ _REGEX_NELTS (__nmatch)], int __eflags);
+
 extern doca_error_t doca_regex_percore_init(struct doca_regex_ctx * regex_ctx);
 extern doca_error_t doca_regex_init(void);
 

@@ -6,8 +6,6 @@
 
 #define WORKQ_DEPTH	128
 
-DEFINE_PER_CPU(struct worker_context *, worker_ctx);
-
 int __init doca_percore_init(struct worker_context * ctx) {
 #ifdef CONFIG_DOCA_REGEX
 	doca_regex_percore_init(&ctx->regex_ctx);
