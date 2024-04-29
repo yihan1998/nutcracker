@@ -9,7 +9,7 @@
 #include "net/netns/netfilter.h"
 
 // static int ip_route(struct sk_buff * skb) {
-//     rte_ring_enqueue(fwd_rq, skb);
+//     rte_ring_enqueue(nf_rq, skb);
 //     return NET_RX_SUCCESS;
 // }
 

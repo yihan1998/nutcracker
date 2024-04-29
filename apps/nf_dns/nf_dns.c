@@ -14,48 +14,66 @@
 #include <linux/udp.h>
 #include <net/skbuff.h>
 
-#define MAX_RULES 100
+#define MAX_CORES   8
+#define MAX_RULES   100
 #define MAX_REGEX_LENGTH 256
 
 /* DOCA compatible */
-regex_t compiled_rules[MAX_RULES];
-int rule_count = 0;
+regex_t * compiled_rules[MAX_CORES];
+int rule_count[MAX_CORES];
 
-int load_regex_rules() {
-    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns/dns_filter_rules.txt", "r");
+int compile_regex_rules(regex_t * rules) {
+    char regex[MAX_REGEX_LENGTH];
+    int ret, count = 0;
+    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns/dns_filter_rules_50.txt", "r");
     if (!file) {
         perror("Failed to open file");
         return -1;
     }
 
-    char regex[MAX_REGEX_LENGTH];
-    int ret;
     while (fgets(regex, MAX_REGEX_LENGTH, file)) {
         if (regex[strlen(regex) - 1] == '\n') {
             regex[strlen(regex) - 1] = '\0';  // Remove newline character
         }
 
-        printf("Regex rule %d: %s\n", rule_count, regex);
+        printf("Regex rule %d: %s\n", count, regex);
 
-        ret = regcomp(&compiled_rules[rule_count], regex, REG_EXTENDED);
+        ret = regcomp(&rules[count], regex, REG_EXTENDED);
         if (ret) {
             fprintf(stderr, "Could not compile regex: %s\n", regex);
             continue;
         }
-        rule_count++;
-        if (rule_count >= MAX_RULES) break;
+        count++;
+        if (count >= MAX_RULES) break;
     }
 
     fclose(file);
+
+    return count;
+}
+
+int load_regex_rules() {
+    regex_t * rules;
+    int nr_rules;
+
+    for (int i = 0; i < MAX_CORES; i++) {
+        rules = (regex_t *)calloc(MAX_RULES, sizeof(regex_t));
+        nr_rules = compile_regex_rules(rules);
+        compiled_rules[i] = rules;
+        rule_count[i] = nr_rules;
+    }
+
     return 0;
 }
 
 int find_matching_rule(const char * domain_name) {
     int result;
+    regex_t * rules = compiled_rules[sched_getcpu()];
+    int count = rule_count[sched_getcpu()];
 
     // Iterate through all compiled rules
-    for (int i = 0; i < rule_count; i++) {
-        result = regexec(&compiled_rules[i], domain_name, 0, NULL, 0);
+    for (int i = 0; i < count; i++) {
+        result = regexec(&rules[i], domain_name, 0, NULL, 0);
         if (result == 0) {
             // printf("Match found with rule %d: %s\n", i, domain_name);
             return i;  // Return the index of the first matching rule
@@ -118,9 +136,9 @@ int parse_dns_query(const unsigned char * buffer, int size) {
     struct dns_header* dns = (struct dns_header*)buffer;
     int position = sizeof(struct dns_header); // Position in the buffer
     print_domain_name(buffer, &position, domain_name);
-    if (find_matching_rule(domain_name) < 0) {
-        return NF_MISS;
-    }
+   if (find_matching_rule(domain_name) < 0) {
+       return NF_MISS;
+   }
     return NF_MATCH;
 }
 
@@ -133,7 +151,6 @@ static unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_h
     struct udphdr * udphdr;
 	uint16_t ulen, len;
 	uint8_t * data;
-	ns_msg handle;
 
     ethhdr = (struct ethhdr *)skb->ptr;
 

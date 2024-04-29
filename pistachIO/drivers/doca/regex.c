@@ -54,24 +54,25 @@ struct doca_regex_match_metadata {
  * @app_cfg [in]: Application configuration
  * @event [in]: DOCA event struct
  */
-// static int report_results(struct doca_event *event) {
-// 	struct doca_regex_match_metadata * const meta = (struct doca_regex_match_metadata *)event->user_data.ptr;
-// 	struct doca_regex_search_result * const result = &(meta->result);
-// 	struct doca_regex_match *match;
-//     printf("Detected matches: %d\n", result->detected_matches);
+int report_results(struct doca_event *event) {
+	struct doca_regex_match_metadata * const meta = (struct doca_regex_match_metadata *)event->user_data.ptr;
+	struct doca_regex_search_result * const result = &(meta->result);
+	struct doca_regex_match *match;
+    printf("Detected matches: %d\n", result->detected_matches);
 
-// 	if (result->detected_matches > 0)
-// 		printf("Job complete. Detected %d match(es), num matched: %d\n", result->detected_matches, result->num_matches);
-// 	if (result->num_matches == 0)
-// 		return;
+	if (result->detected_matches > 0)
+		printf("Job complete. Detected %d match(es), num matched: %d\n", result->detected_matches, result->num_matches);
+	if (result->num_matches == 0)
+		return 0;
 
-// 	for (match = result->matches; match != NULL;) {
-// 		printf("Matched rule Id: %12d\n", match->rule_id);
-// 		match = match->next;
-// 	}
+	for (match = result->matches; match != NULL;) {
+		printf("Matched rule Id: %12d\n", match->rule_id);
+		match = match->next;
+	}
 
-// 	result->matches = NULL;
-// }
+	result->matches = NULL;
+	return 0;
+}
 
 doca_error_t doca_regex_percore_init(struct doca_regex_ctx * regex_ctx) {
 	doca_error_t result;
@@ -381,12 +382,13 @@ doca_error_t doca_regex_init(void) {
 }
 
 int regcomp(regex_t *_Restrict_ __preg, const char *_Restrict_ __pattern, int __cflags) {
-    pr_debug(REGEX_DEBUG, "Compiling regex rule: %s...\n", __pattern);
+    // pr_debug(REGEX_DEBUG, "Compiling regex rule: %s...\n", __pattern);
 #ifndef CONFIG_DOCA_REGEX
     return libc_regcomp(__preg, __pattern, __cflags);
 #else
-    int ret;
+#if 0
 	doca_error_t result;
+    int ret;
 	struct regex * regex = (struct regex *)__preg;
 
 	if (!regex->rule_buf) {
@@ -425,6 +427,7 @@ int regcomp(regex_t *_Restrict_ __preg, const char *_Restrict_ __pattern, int __
 		return -1;
 	}
 	free(rules_file_data);
+#endif
 
 	return 0;
 #endif
@@ -437,7 +440,6 @@ int regexec(const regex_t *_Restrict_ __preg, const char *_Restrict_ __String, s
 #else
 	struct doca_regex_match_metadata meta, *ret;
     int res;
-    char string[] = "www.youtube.com";
 	struct doca_event event = {0};
     void *mbuf_data;
 	struct doca_regex_ctx * regex_ctx = &worker_ctx->regex_ctx;
@@ -447,10 +449,10 @@ int regexec(const regex_t *_Restrict_ __preg, const char *_Restrict_ __String, s
     //     return 0;
     // }
 
-    memcpy(regex_ctx->data_buffer, string, strlen(string));
+    memcpy(regex_ctx->data_buffer, __String, strlen(__String));
 
     doca_buf_get_data(regex_ctx->buf, &mbuf_data);
-    doca_buf_set_data(regex_ctx->buf, mbuf_data, strlen(string));
+    doca_buf_set_data(regex_ctx->buf, mbuf_data, strlen(__String));
 
     struct doca_regex_job_search const job = {
         .base = {

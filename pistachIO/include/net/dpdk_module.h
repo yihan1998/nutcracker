@@ -11,6 +11,7 @@
 #include <rte_version.h>
 
 #include "init.h"
+#include "kernel/cpumask.h"
 
 /* Maximum number of packets to be retrieved via burst */
 #define MAX_PKT_BURST   32

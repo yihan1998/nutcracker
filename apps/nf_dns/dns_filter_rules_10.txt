@@ -1,0 +1,10 @@
+^.*\.logitech\.com$
+^.*\.intel\.com$
+^.*\.amd\.com$
+^.*\.cisco\.com$
+^.*\.oracle\.com$
+^.*\.sap\.com$
+^.*\.uber\.com$
+^.*\.slack\.com$
+^.*\.zoom\.us$
+^.*\.telegram\.org$

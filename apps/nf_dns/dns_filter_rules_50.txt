@@ -1,7 +1,7 @@
 ^.*\.google\.com$
 ^.*\.facebook\.com$
-^.*\.mpeg$
 ^.*\.amazon\.com$
+^.*\.pixlr.com$
 ^.*\.twitter\.com$
 ^.*\.instagram\.com$
 ^.*\.linkedin\.com$
@@ -38,7 +38,6 @@
 ^.*\.chrome\.com$
 ^.*\.safari\.com$
 ^.*\.microsoft\.com$
-^.*\.(exe|dll|bin|dat|tmp)$
 ^.*\.doubleclick\.net$
 ^.*\.adsense\.google\.com$
 ^.*\.admob\.com$
@@ -47,5 +46,5 @@
 ^.*\.googletagmanager\.com$
 ^.*\.googletagservices\.com$
 ^.*\.cookie\.com$
-^.*\.tracker\.com$
+^.*\.britannica\.com$
 ^.*\.youtube\.com$

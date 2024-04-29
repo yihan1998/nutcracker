@@ -144,7 +144,7 @@ int pistachio_loop(void) {
 
     while (1) {
         /* Poll epoll IPC events from workers if there is any */
-        nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
+        nevent = epoll_wait(epfd, events, MAX_EVENTS, 1000);
         for(int i = 0; i < nevent; i++) {
             /* New worker is connecting to control plane */
             if (events[i].data.fd == control_fd) {

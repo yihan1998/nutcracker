@@ -38,7 +38,7 @@ int __init fs_init(void) {
     iotask_mp = rte_mempool_create("io_task_mp", NR_MAX_IO_TASK, sizeof(struct iocb_task_struct), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(iotask_mp != NULL);
 
-    nftask_mp = rte_mempool_create("nftask_mp", 2048, sizeof(struct nfcb_task_struct), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    nftask_mp = rte_mempool_create("nftask_mp", 8192, sizeof(struct nfcb_task_struct), RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(nftask_mp != NULL);
 
     fd = shm_open("fdtable", O_CREAT | O_RDWR, 0666);

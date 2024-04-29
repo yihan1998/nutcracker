@@ -25,10 +25,12 @@ unsigned int nr_cpu_ids = NR_CPUS;
 
 pthread_t worker_ids[NR_CPUS];
 
+DEFINE_PER_CPU(unsigned int, cpu_id);
+
 struct rte_ring * worker_rq;
 struct rte_ring * worker_cq;
-struct rte_ring * fwd_rq;
-struct rte_ring * fwd_cq;
+struct rte_ring * nf_rq;
+struct rte_ring * nf_cq;
 
 struct rte_mempool * task_mp;
 
@@ -82,13 +84,13 @@ void * worker_main(void * arg) {
         // }
 
         // work_cnt = rte_ring_dequeue_burst(worker_rq, (void **)tmp_pkts, MAX_WORK_BURST, NULL);
-        nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, MAX_WORK_BURST, NULL);
+        nb_recv = rte_ring_dequeue_burst(nf_rq, (void **)tasks, MAX_WORK_BURST, NULL);
         if (nb_recv) {
             for (int i = 0; i < nb_recv; i++) {
                 t = tasks[i];
                 if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
-                    // while (rte_ring_enqueue(fwd_cq, t->skb) < 0);
-                    while (rte_ring_enqueue(fwd_cq, t->skb) < 0) {
+                    // while (rte_ring_enqueue(nf_cq, t->skb) < 0);
+                    while (rte_ring_enqueue(nf_cq, t->skb) < 0) {
                         printf("Failed to enqueue into fwq CQ\n");
                         // rte_pktmbuf_free(t->skb->m);
                         // rte_mempool_put(skb_mp, t->skb);
@@ -111,11 +113,11 @@ int __init worker_init(void) {
     worker_cq = rte_ring_create("worker_cq", 4096, rte_socket_id(), 0);
     assert(worker_cq != NULL);
 
-    fwd_rq = rte_ring_create("fwd_rq", 4096, rte_socket_id(), 0);
-    assert(fwd_rq != NULL);
+    nf_rq = rte_ring_create("nf_rq", 8192, rte_socket_id(), 0);
+    assert(nf_rq != NULL);
 
-    fwd_cq = rte_ring_create("fwd_cq", 4096, rte_socket_id(), 0);
-    assert(fwd_cq != NULL);
+    nf_cq = rte_ring_create("nf_cq", 8192, rte_socket_id(), 0);
+    assert(nf_cq != NULL);
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     // assert(task_mp != NULL);
@@ -125,9 +127,9 @@ int __init worker_init(void) {
 
     /* Create one runtime thread on each possible core */
     // for (int i = 0; i < nr_cpu_ids; i++) {
-    for (int i = 0; i < nr_cpu_ids - 4; i++) {
+    for (int i = 0; i < nr_cpu_ids - NR_RXTX_MODULE; i++) {
         CPU_ZERO(&cpuset);
-        CPU_SET(i + 4, &cpuset);
+        CPU_SET(i + NR_RXTX_MODULE, &cpuset);
 
         struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
 #ifdef CONFIG_DOCA
@@ -147,6 +149,5 @@ int __init worker_init(void) {
             exit(EXIT_FAILURE);
         }
     }
-
     return 0;
 }

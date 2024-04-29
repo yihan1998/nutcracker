@@ -235,7 +235,7 @@ regex_destroy:
  * @app_cfg [in]: Application configuration
  * @event [in]: DOCA event struct
  */
-static void
+ void
 report_results(struct test_dns_config *app_cfg, struct doca_event *event)
 {
 	struct test_dns_job_metadata * const meta = (struct test_dns_job_metadata *)event->user_data.ptr;

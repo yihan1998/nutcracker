@@ -33,4 +33,6 @@
 #define DECLARE_PER_CPU_SHARED_ALIGNED(type, name)  \
     extern __typeof__(type) name __attribute__ ((aligned(64)))
 
+DECLARE_PER_CPU(unsigned int, cpu_id);
+
 #endif  /* _PERCPU_H_ */

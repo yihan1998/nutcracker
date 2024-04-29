@@ -1,0 +1,10 @@
+1, ^.*\.logitech\.com$
+2, ^.*\.intel\.com$
+3, ^.*\.amd\.com$
+4, ^.*\.cisco\.com$
+5, ^.*\.oracle\.com$
+6, ^.*\.sap\.com$
+7, ^.*\.uber\.com$
+8, ^.*\.slack\.com$
+9, ^.*\.zoom\.us$
+10, ^.*\.telegram\.org$

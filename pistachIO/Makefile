@@ -13,6 +13,10 @@ CFLAGS 		+= $(INC)
 CONFIG 	= .config
 include ${CONFIG}
 
+ifeq ($(TEST_INLINE),y)
+	CFLAGS	+= -DTEST_INLINE
+endif
+
 ifeq ($(CONFIG_DPDK),y)
 	CFLAGS	+= -DCONFIG_DPDK
 endif

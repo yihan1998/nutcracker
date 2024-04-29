@@ -45,7 +45,9 @@ static struct rte_hash_parameters params = {
 pthread_spinlock_t rx_lock;
 pthread_spinlock_t tx_lock;
 
-void * rxtx_module(void * arg) {
+DEFINE_PER_CPU(struct rte_ring *, fwd_queue);
+
+int rxtx_module(void * arg) {
     int pid = 0, nb_recv = 0, nb_send = 0;
     int sec_recv = 0, sec_send = 0;
     // int ret;
@@ -54,6 +56,20 @@ void * rxtx_module(void * arg) {
     struct sk_buff * skb;
 	struct rte_mbuf * m;
     struct timespec curr, last_log;
+    char name[RTE_MEMZONE_NAMESIZE];
+
+    worker_ctx = (struct worker_context *)arg;
+
+    cpu_id = sched_getcpu();
+
+    sprintf(name, "fwd_queue_%d", cpu_id);
+    fwd_queue = rte_ring_create(name, 4096, rte_socket_id(), 0);
+    assert(fwd_queue != NULL);
+
+#ifdef CONFIG_DOCA
+    pr_info("Initialze DOCA percore context...\n");
+    doca_percore_init(worker_ctx);
+#endif  /* CONFIG_DOCA */
 
     clock_gettime(CLOCK_REALTIME, &last_log);
     curr = last_log;
@@ -106,12 +122,12 @@ void * rxtx_module(void * arg) {
 #endif
         // {
         //     struct nfcb_task_struct * t, * tasks[32];
-        //     int nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, 32, NULL);
+        //     int nb_recv = rte_ring_dequeue_burst(nf_rq, (void **)tasks, 32, NULL);
         //     if (nb_recv) {
         //         for (int i = 0; i < nb_recv; i++) {
         //             t = tasks[i];
         //             if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
-        //                 if (rte_ring_enqueue(fwd_cq, t->skb) < 0) {
+        //                 if (rte_ring_enqueue(nf_cq, t->skb) < 0) {
         //                     // pr_debug(NF_DEBUG, "Failed to enqueue into fwd CQ\n");
         //                     rte_pktmbuf_free(t->skb->m);
         //                     free_skb(t->skb);
@@ -122,9 +138,25 @@ void * rxtx_module(void * arg) {
         //     }
         // }
 
-        int ret;
+        int ret, nb_recv;
         struct sk_buff * skbs[32];
-        int nb_recv = rte_ring_dequeue_burst(fwd_cq, (void **)skbs, 32, NULL);
+
+        nb_recv = rte_ring_dequeue_burst(fwd_queue, (void **)skbs, 32, NULL);
+        if (nb_recv) {
+            for (int i = 0; i < nb_recv; i++) {
+                skb = skbs[i];
+                m = skb->m;
+                pthread_spin_lock(&tx_lock);
+                ret = dpdk_insert_txpkt(pid, m);
+                pthread_spin_unlock(&tx_lock);
+                if (ret < 0) {
+                    rte_pktmbuf_free(m);
+                }
+            }
+    		rte_mempool_put_bulk(skb_mp, (void *)skbs, nb_recv);
+        }
+
+        nb_recv = rte_ring_dequeue_burst(nf_cq, (void **)skbs, 32, NULL);
         if (nb_recv) {
             for (int i = 0; i < nb_recv; i++) {
                 skb = skbs[i];
@@ -148,14 +180,13 @@ void * rxtx_module(void * arg) {
         }
     }
 
-    return NULL;
+    return 0;
 }
 
 int __init net_init(void) {
-    pthread_t rxtx_pid;
-    pthread_attr_t attr;
-    cpu_set_t cpuset;
-    int nr_rxtx_module = 4;
+    // pthread_t rxtx_pid;
+    // pthread_attr_t attr;
+    // cpu_set_t cpuset;
 
     struct rte_tailq_elem pre_routing_tailq = {
         .name = "pre_routing_table",
@@ -208,29 +239,48 @@ int __init net_init(void) {
     assert(post_routing_table != NULL);
 
     // Initialize the thread attribute
-    pthread_attr_init(&attr);
+    // pthread_attr_init(&attr);
 
     pthread_spin_init(&rx_lock, PTHREAD_PROCESS_SHARED);
     pthread_spin_init(&tx_lock, PTHREAD_PROCESS_SHARED);
 
-    // Create the RX path
-    for (int i = 0; i < nr_rxtx_module; i++) {
-        // Initialize the CPU set to be empty
-        CPU_ZERO(&cpuset);
-        // RX core runs on core 0
-        CPU_SET(i, &cpuset);
+//     // Create the RX path
+//     for (int i = 0; i < nr_rxtx_module; i++) {
+//         struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+// #ifdef CONFIG_DOCA
+//         if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+//             pr_err("Failed to create work queue for core %d\n", i);
+//         }
+// #endif
 
-        // Set the CPU affinity in the thread attributes
-        if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
-            perror("pthread_attr_setaffinity_np");
-            exit(EXIT_FAILURE);
-        }
+//         // Initialize the CPU set to be empty
+//         CPU_ZERO(&cpuset);
+//         // RX core runs on core 0
+//         CPU_SET(i, &cpuset);
 
-        // if (pthread_create(&rx_pid, &attr, rx_module, NULL) != 0) {
-        if (pthread_create(&rxtx_pid, &attr, rxtx_module, NULL) != 0) {
-            perror("Create RX path failed!");
-            exit(EXIT_FAILURE);
+//         // Set the CPU affinity in the thread attributes
+//         if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
+//             perror("pthread_attr_setaffinity_np");
+//             exit(EXIT_FAILURE);
+//         }
+
+//         // if (pthread_create(&rx_pid, &attr, rx_module, NULL) != 0) {
+//         if (pthread_create(&rxtx_pid, &attr, rxtx_module, ctx) != 0) {
+//             perror("Create RX path failed!");
+//             exit(EXIT_FAILURE);
+//         }
+//     }
+
+    uint32_t lcore_id = 0;
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", lcore_id);
         }
+#endif
+        rte_eal_remote_launch(rxtx_module, ctx, lcore_id);
     }
 
     return 0;

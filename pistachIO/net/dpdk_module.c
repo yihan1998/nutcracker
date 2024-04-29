@@ -60,7 +60,14 @@ struct rte_eth_conf port_conf = {
     },
 #else
     .rxmode = {
-        .mq_mode        = RTE_ETH_MQ_RX_NONE,
+        .mq_mode        = RTE_ETH_MQ_RX_RSS,
+    },
+    .rx_adv_conf = {
+        .rss_conf = {
+            .rss_key = NULL,
+            .rss_hf =
+                RTE_ETH_RSS_IP | RTE_ETH_RSS_TCP | RTE_ETH_RSS_UDP,
+        },
     },
 #endif
 #if RTE_VERSION < RTE_VERSION_NUM(20, 11, 0, 0)
@@ -99,19 +106,6 @@ static int mempool_init(void) {
     pkt_mempool = rte_pktmbuf_pool_create("pkt_mempool", N_MBUF,
                     RTE_MEMPOOL_CACHE_MAX_SIZE, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
     assert(pkt_mempool);
-
-    /* Associate the first RX/TX to the first packet mempool (both used by control plane) */
-    // uint16_t pid = 0;
-    // RTE_ETH_FOREACH_DEV(pid) {
-    //     for (int i = 0; i < MAX_PKT_BURST; i++) {
-    //         /* Allocate TX packet buffer in DPDK context memory pool */
-    //         tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
-    //         assert(tx_mbufs[pid].mtable[i] != NULL);
-    //     }
-
-    //     tx_mbufs[pid].len = 0;
-    // }
-
     return 0;
 }
 
@@ -218,15 +212,6 @@ uint32_t dpdk_send_pkts(int pid) {
             pkts += ret;
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
-
-        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
-        //     /* Allocate new buffer for sended packets */
-        //     tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempool);
-        //     if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
-        //         rte_exit(EXIT_FAILURE, "Failed to allocate wmbuf[%d] on device %d!\n", i, pid);
-        //     }
-        // }
 
         tx_mbufs[pid].len = 0;
     }

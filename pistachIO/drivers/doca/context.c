@@ -16,6 +16,7 @@ int __init doca_percore_init(struct worker_context * ctx) {
 }
 
 int __init doca_worker_init(struct worker_context * ctx) {
+#if CONFIG_DOCA
 	doca_error_t result;
 
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
@@ -33,6 +34,7 @@ int __init doca_worker_init(struct worker_context * ctx) {
 		pr_err("Unable to attach work queue to REGEX. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
+#endif
 #endif
     return DOCA_SUCCESS;
 }
