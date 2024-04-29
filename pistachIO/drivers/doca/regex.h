@@ -9,6 +9,8 @@
 #include <doca_regex.h>
 #include <doca_mmap.h>
 
+#include <regex.h>
+
 #include "doca/common.h"
 
 #define MAX_FILE_NAME	255	/* Maximal length of file path */

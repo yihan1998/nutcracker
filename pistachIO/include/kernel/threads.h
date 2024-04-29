@@ -5,6 +5,9 @@
 
 #include "init.h"
 #include "percpu.h"
+#ifdef CONFIG_DOCA_REGEX
+#include "doca/regex.h"
+#endif  /* CONFIG_DOCA */
 
 #ifndef CONFIG_NR_CPUS
 #define CONFIG_NR_CPUS  1
@@ -14,11 +17,11 @@
 
 extern pthread_t worker_ids[NR_CPUS];
 
+
 struct worker_context {
 #ifdef CONFIG_DOCA
 	struct doca_workq * workq;   /* DOCA work queue */
 #ifdef CONFIG_DOCA_REGEX
-    #include "doca/regex.h"
     struct doca_regex_ctx regex_ctx;
 #endif  /* CONFIG_DOCA_REGEX */
 #endif  /* CONFIG_DOCA */

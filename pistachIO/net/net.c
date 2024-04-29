@@ -19,6 +19,10 @@
 #include "net/udp.h"
 #include "linux/netfilter.h"
 
+#ifdef CONFIG_DOCA
+#include "doca/context.h"
+#endif  /* CONFIG_DOCA */
+
 #include <rte_ethdev.h>
 #include <rte_tailq.h>
 

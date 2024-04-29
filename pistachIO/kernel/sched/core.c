@@ -19,6 +19,10 @@
 #include "net/dpdk_module.h"
 #include "fs/fs.h"
 
+#ifdef CONFIG_DOCA
+#include "doca/context.h"
+#endif  /* CONFIG_DOCA */
+
 #define MAX_WORK_BURST  32
 
 unsigned int nr_cpu_ids = NR_CPUS;
