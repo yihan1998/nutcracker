@@ -28,6 +28,8 @@
 bool kernel_early_boot = true;
 bool kernel_shutdown = false;
 
+struct worker_context * contexts[NR_CPUS];
+
 struct sock_info {
     int parent;
     int sockfd;
@@ -106,10 +108,58 @@ static int handle_read_event(int epfd, struct epoll_event * ev) {
     return 0;
 }
 
+int pistachio_control_plane(void) {
+    int new_sockfd, nevent;
+    struct epoll_event events[MAX_EVENTS];
+
+    /* Poll epoll IPC events from workers if there is any */
+    nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
+    for(int i = 0; i < nevent; i++) {
+        /* New worker is connecting to control plane */
+        if (events[i].data.fd == control_fd) {
+            pr_info("Incoming connection!\n");
+            if ((new_sockfd = accept(control_fd, NULL, NULL)) < 0) {
+                pr_err("Failed to accept incoming connection\n");
+                continue;
+            }
+            if (accept_new_connection(epfd, control_fd, new_sockfd) < 0) {
+                pr_err("Failed to register incoming connection\n");
+            }
+            continue;
+        }
+
+        if (events[i].data.fd == loader_fd) {
+            pr_info("Incoming load request!\n");
+            if ((new_sockfd = accept(loader_fd, NULL, NULL)) < 0) {
+                pr_err("Failed to accept incoming connection\n");
+                continue;
+            }
+            if (accept_new_connection(epfd, loader_fd, new_sockfd) < 0) {
+                pr_err("Failed to register incoming connection\n");
+            }
+            continue;
+        }
+
+        if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
+            close(events[i].data.fd);
+            continue;
+        }
+
+        if (events[i].events & EPOLLIN) {
+            handle_read_event(epfd, &events[i]);
+        }
+    }
+
+    return 0;
+}
+
 int pistachio_loop(void) {
-    int ret, new_sockfd;
-    int epfd, nevent;
-    struct epoll_event ev, events[MAX_EVENTS];
+    int ret;
+    struct epoll_event ev;
+#if 0
+    int new_sockfd, nevent;
+    struct epoll_event events[MAX_EVENTS];
+#endif
 
     /* Register termination handling callback */
     signal(SIGINT, signal_handler); 
@@ -141,10 +191,10 @@ int pistachio_loop(void) {
         pr_err("<%s:%d> Failed to register epoll event for loader fd %d! (%s)\n", __func__, __LINE__, loader_fd, strerror(errno));
         return -1;
     }
-
+#if 0
     while (1) {
         /* Poll epoll IPC events from workers if there is any */
-        nevent = epoll_wait(epfd, events, MAX_EVENTS, 1000);
+        nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
         for(int i = 0; i < nevent; i++) {
             /* New worker is connecting to control plane */
             if (events[i].data.fd == control_fd) {
@@ -181,6 +231,64 @@ int pistachio_loop(void) {
             }
         }
     }
+#endif
+#if 0
+    uint32_t lcore_id = 0;
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", lcore_id);
+        }
+#endif
+        rte_eal_remote_launch(rxtx_module, ctx, lcore_id);
+    }
+
+    struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", lcore_id);
+        }
+#endif
+
+    rxtx_module(ctx);
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        if (rte_eal_wait_lcore(lcore_id) < 0) {
+			rte_exit(EXIT_FAILURE, "failed to wait\n");
+        }
+    }
+#endif
+
+    uint32_t lcore_id = 0;
+    for (int i = 0; i < NR_CPUS; i++) {
+        contexts[i] = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(contexts[i]) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", i);
+        }
+#endif
+    }
+
+    /* Launch per-lcore init on every lcore */
+	rte_eal_mp_remote_launch(rxtx_module, NULL, CALL_MAIN);
+	// rte_eal_mp_remote_launch(rxtx_module, NULL, SKIP_MAIN);
+    // while (1) {
+    //     pistachio_control_plane();
+    // }
+
+    sleep(30);
+
+	RTE_LCORE_FOREACH_WORKER(lcore_id) {
+		if (rte_eal_wait_lcore(lcore_id) < 0)
+			return -1;
+	}
+
+	/* clean up the EAL */
+	rte_eal_cleanup();
+
+    return 0;
 }
 
 int main(int argc, char ** argv) {

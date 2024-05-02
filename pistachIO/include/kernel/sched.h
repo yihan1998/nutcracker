@@ -50,6 +50,7 @@ extern struct rte_ring * nf_cq;
 
 DECLARE_PER_CPU(struct rte_ring *, fwd_queue);
 
+extern int pistachio_control_plane(void);
 extern int __init sched_init(void);
 
 #endif  /* _KERNEL_SCHED_H_ */

@@ -26,6 +26,10 @@
 #include <rte_ethdev.h>
 #include <rte_tailq.h>
 
+#define NSEC_PER_USEC       1000L
+#define USEC_PER_SEC        1000000L
+#define TIMESPEC_TO_USEC(t) ((t.tv_sec * USEC_PER_SEC) + (t.tv_nsec / NSEC_PER_USEC))
+
 struct rte_hash * flow_table;
 
 struct rte_tailq_entry_head * pre_routing_table;
@@ -59,12 +63,14 @@ int rxtx_module(void * arg) {
     int pkt_size;
     struct sk_buff * skb;
 	struct rte_mbuf * m;
-    struct timespec curr, last_log;
+    struct timespec curr, last_log, last_poll;
     char name[RTE_MEMZONE_NAMESIZE];
-
-    worker_ctx = (struct worker_context *)arg;
+    bool is_main = false;
 
     cpu_id = sched_getcpu();
+    if (cpu_id == rte_get_main_lcore()) is_main = true;
+    // worker_ctx = (struct worker_context *)arg;
+    worker_ctx = contexts[cpu_id];
 
     sprintf(name, "fwd_queue_%d", cpu_id);
     fwd_queue = rte_ring_create(name, 4096, rte_socket_id(), 0);
@@ -77,6 +83,7 @@ int rxtx_module(void * arg) {
 
     clock_gettime(CLOCK_REALTIME, &last_log);
     curr = last_log;
+    last_poll = last_log;
 
     while (1) {
         // int count = 0;
@@ -90,6 +97,13 @@ int rxtx_module(void * arg) {
             pr_info("[RXTX] receive %d packets, send %d packets\n", sec_recv, sec_send);
             sec_recv = sec_send = 0;
             last_log = curr;
+        }
+
+        if (is_main) {
+            if (TIMESPEC_TO_USEC(curr) - TIMESPEC_TO_USEC(last_poll) >= 100000) {
+                pistachio_control_plane();
+                last_poll = curr;
+            }
         }
 
         pthread_spin_lock(&rx_lock);
@@ -150,9 +164,9 @@ int rxtx_module(void * arg) {
             for (int i = 0; i < nb_recv; i++) {
                 skb = skbs[i];
                 m = skb->m;
-                pthread_spin_lock(&tx_lock);
+                // pthread_spin_lock(&tx_lock);
                 ret = dpdk_insert_txpkt(pid, m);
-                pthread_spin_unlock(&tx_lock);
+                // pthread_spin_unlock(&tx_lock);
                 if (ret < 0) {
                     rte_pktmbuf_free(m);
                 }
@@ -165,9 +179,9 @@ int rxtx_module(void * arg) {
             for (int i = 0; i < nb_recv; i++) {
                 skb = skbs[i];
                 m = skb->m;
-                pthread_spin_lock(&tx_lock);
+                // pthread_spin_lock(&tx_lock);
                 ret = dpdk_insert_txpkt(pid, m);
-                pthread_spin_unlock(&tx_lock);
+                // pthread_spin_unlock(&tx_lock);
                 if (ret < 0) {
                     rte_pktmbuf_free(m);
                 }
@@ -274,7 +288,7 @@ int __init net_init(void) {
 //             exit(EXIT_FAILURE);
 //         }
 //     }
-
+#if 0
     uint32_t lcore_id = 0;
 
     RTE_LCORE_FOREACH_WORKER(lcore_id) {
@@ -286,6 +300,6 @@ int __init net_init(void) {
 #endif
         rte_eal_remote_launch(rxtx_module, ctx, lcore_id);
     }
-
+#endif
     return 0;
 }

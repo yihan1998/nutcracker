@@ -43,9 +43,9 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
             if (p->cond(skb) == NF_MATCH) {
 #ifdef TEST_INLINE
                 if (p->hook(p->priv, skb, NULL) == NF_ACCEPT) {
-                    // while (rte_ring_enqueue(fwd_queue, skb) < 0) {
-                    while (rte_ring_enqueue(nf_cq, skb) < 0) {
-                        printf("Failed to enqueue into fwq CQ\n");
+                    while (rte_ring_enqueue(fwd_queue, skb) < 0) {
+                    // while (rte_ring_enqueue(nf_cq, skb) < 0) {
+                        printf("Failed to enqueue into nf_cq\n");
                     }
                 }
 #else
@@ -56,7 +56,7 @@ int nf_hook(unsigned int hook, struct sk_buff * skb) {
                         new_entry->entry = *p;
                         new_entry->skb = skb;
                         while (rte_ring_enqueue(nf_rq, new_entry) < 0) {
-                            printf("Failed to enqueue into fwq RQ\n");
+                            printf("Failed to enqueue into nf_rq\n");
                         }
                     }
                 } while (!new_entry);

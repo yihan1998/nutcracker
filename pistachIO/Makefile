@@ -101,7 +101,9 @@ LIBNFTNL	= $(BUILD_DIR)/lib/libnftnl.so
 SUBDIRS 	:= entry/ kernel/ ipc/ net/ loader/ printk/
 
 ifeq ($(CONFIG_BLUEFIELD2),y)
+ifeq ($(CONFIG_DOCA),y)
 SUBDIRS		+= drivers/doca
+endif
 endif
 
 EXE_SRCS	:= $(shell find $(SUBDIRS) -name '*.c' -print) 

@@ -27,6 +27,7 @@ struct worker_context {
 #endif  /* CONFIG_DOCA */
 };
 
+extern struct worker_context * contexts[NR_CPUS];
 DECLARE_PER_CPU(struct worker_context *, worker_ctx);
 
 extern int __init worker_init(void);

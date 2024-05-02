@@ -3,6 +3,7 @@
 
 #include "init.h"
 
+extern int epfd;
 extern int control_fd;
 
 extern int __init ipc_init(void);

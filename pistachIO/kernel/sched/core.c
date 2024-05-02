@@ -112,8 +112,10 @@ void * worker_main(void * arg) {
 }
 
 int __init worker_init(void) {
+#ifndef TEST_INLINE
     pthread_attr_t attr;
     cpu_set_t cpuset;
+#endif
 
     worker_rq = rte_ring_create("worker_rq", 4096, rte_socket_id(), 0);
     assert(worker_rq != NULL);
@@ -129,7 +131,7 @@ int __init worker_init(void) {
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     // assert(task_mp != NULL);
-
+#ifndef TEST_INLINE
     // Initialize the thread attribute
     pthread_attr_init(&attr);
 
@@ -157,5 +159,6 @@ int __init worker_init(void) {
             exit(EXIT_FAILURE);
         }
     }
+#endif
     return 0;
 }
