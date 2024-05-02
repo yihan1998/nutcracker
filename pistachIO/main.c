@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -261,7 +262,6 @@ int pistachio_loop(void) {
     }
 #endif
 
-    uint32_t lcore_id = 0;
     for (int i = 0; i < NR_CPUS; i++) {
         contexts[i] = (struct worker_context *)calloc(1, sizeof(struct worker_context));
 #ifdef CONFIG_DOCA
@@ -272,6 +272,7 @@ int pistachio_loop(void) {
     }
 
 #if defined(CONFIG_BLUEFIELD2)
+    uint32_t lcore_id = 0;
     /* Launch per-lcore init on every lcore */
 	rte_eal_mp_remote_launch(rxtx_module, NULL, CALL_MAIN);
 	// rte_eal_mp_remote_launch(rxtx_module, NULL, SKIP_MAIN);
@@ -290,7 +291,7 @@ int pistachio_loop(void) {
     int ret;
     pthread_t pids[NR_RXTX_MODULE];
     for (int i = 0; i < NR_RXTX_MODULE; i++) {
-        ret = pthread_create(&pids[i], NULL, rxtx_module, NULL);
+        ret = pthread_create(&pids[i], NULL, (void * (*)(void *))rxtx_module, NULL);
         if (ret) {
             pr_err("pthread_create() failed!\n");
             return -1;
