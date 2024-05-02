@@ -71,7 +71,7 @@ int rxtx_module(void * arg) {
 #if RTE_VERSION >= RTE_VERSION_NUM(20, 11, 0, 0)
     if (cpu_id == rte_get_main_lcore()) is_main = true;
 #else
-    if (cpu_id == rte_get_main_lcore()) is_main = true;
+    if (cpu_id == rte_get_master_lcore()) is_main = true;
 #endif
     // worker_ctx = (struct worker_context *)arg;
     worker_ctx = contexts[cpu_id];
