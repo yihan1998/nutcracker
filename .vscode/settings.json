@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "cstdlib": "c",
+        "context.h": "c",
+        "threads.h": "c"
+    }
+}
