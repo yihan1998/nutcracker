@@ -288,7 +288,6 @@ int pistachio_loop(void) {
 	/* clean up the EAL */
 	rte_eal_cleanup();
 #elif defined(CONFIG_OCTEON)
-    int ret;
     pthread_t pids[NR_RXTX_MODULE];
     for (int i = 0; i < NR_RXTX_MODULE; i++) {
         ret = pthread_create(&pids[i], NULL, (void * (*)(void *))rxtx_module, NULL);
