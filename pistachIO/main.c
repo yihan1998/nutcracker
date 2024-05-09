@@ -154,6 +154,16 @@ int pistachio_control_plane(void) {
     return 0;
 }
 
+int main_entry(void * arg) {
+    if (rte_lcore_id() < NR_RXTX) {
+        rxtx_module(NULL);
+    } else {
+        worker_main(NULL);
+    }
+
+    return 0;
+}
+
 int pistachio_loop(void) {
     int ret;
     struct epoll_event ev;
@@ -274,7 +284,8 @@ int pistachio_loop(void) {
 #if defined(CONFIG_BLUEFIELD2)
     uint32_t lcore_id = 0;
     /* Launch per-lcore init on every lcore */
-	rte_eal_mp_remote_launch(rxtx_module, NULL, CALL_MAIN);
+	rte_eal_mp_remote_launch(main_entry, NULL, CALL_MAIN);
+	// rte_eal_mp_remote_launch(rxtx_module, NULL, CALL_MAIN);
 	// rte_eal_mp_remote_launch(rxtx_module, NULL, SKIP_MAIN);
     // while (1) {
     //     pistachio_control_plane();
@@ -288,22 +299,16 @@ int pistachio_loop(void) {
 	/* clean up the EAL */
 	rte_eal_cleanup();
 #elif defined(CONFIG_OCTEON)
-    pthread_t pids[NR_RXTX_MODULE];
-    for (int i = 0; i < NR_RXTX_MODULE; i++) {
-        ret = pthread_create(&pids[i], NULL, (void * (*)(void *))rxtx_module, NULL);
-        if (ret) {
-            pr_err("pthread_create() failed!\n");
-            return -1;
-        }
-    }
+    uint32_t lcore_id = 0;
+    /* Launch per-lcore init on every lcore */
+	rte_eal_mp_remote_launch(main_entry, NULL, CALL_MASTER);
+	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+		if (rte_eal_wait_lcore(lcore_id) < 0)
+			return -1;
+	}
 
-    for (int i = 0; i < NR_RXTX_MODULE; i++) {
-        ret = pthread_join(pids[i], NULL);
-        if (ret) {
-            pr_err("pthread_join() failed!\n");
-            return -1;
-        }
-    }
+	/* clean up the EAL */
+	rte_eal_cleanup();
 #endif
     return 0;
 }

@@ -142,8 +142,11 @@ int compile_and_run(const char * filepath) {
     }
 
     // Relocate the compiled program into memory
-    // if (tcc_relocate(s, TCC_RELOCATE_AUTO) < 0) {
+#if defined(CONFIG_BLUEFIELD2)
     if (tcc_relocate(s) < 0) {
+#elif defined(CONFIG_OCTEON)
+    if (tcc_relocate(s, TCC_RELOCATE_AUTO) < 0) {
+#endif
         pr_err("Could not relocate tcc code\n");
         return 1;
     }

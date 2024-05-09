@@ -13,7 +13,7 @@ int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 
     skb = alloc_skb(pkt, pkt_size);
     if (!skb) {
-		// pr_warn("Failed to allocate new skbuff!\n");
+		pr_warn("Failed to allocate new skbuff!\n");
 		return NET_RX_DROP;
 	}
 

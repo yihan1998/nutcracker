@@ -59,7 +59,8 @@ struct task_struct * create_new_task(void * argp, void (*func)(void *)) {
 
 void * worker_main(void * arg) {
     int nb_recv = 0;
-    worker_ctx = (struct worker_context *)arg;
+    // worker_ctx = (struct worker_context *)arg;
+    worker_ctx = contexts[rte_lcore_id()];
 #ifdef CONFIG_DOCA
     pr_info("Initialze DOCA percore context...\n");
     doca_percore_init(worker_ctx);
@@ -113,8 +114,8 @@ void * worker_main(void * arg) {
 
 int __init worker_init(void) {
 #ifndef TEST_INLINE
-    pthread_attr_t attr;
-    cpu_set_t cpuset;
+    // pthread_attr_t attr;
+    // cpu_set_t cpuset;
 #endif
 
     worker_rq = rte_ring_create("worker_rq", 4096, rte_socket_id(), 0);
@@ -132,14 +133,15 @@ int __init worker_init(void) {
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     // assert(task_mp != NULL);
 #ifndef TEST_INLINE
+#if 0
     // Initialize the thread attribute
     pthread_attr_init(&attr);
 
     /* Create one runtime thread on each possible core */
     // for (int i = 0; i < nr_cpu_ids; i++) {
-    for (int i = 0; i < nr_cpu_ids - NR_RXTX_MODULE; i++) {
+    for (int i = 0; i < nr_cpu_ids - NR_RXTX; i++) {
         CPU_ZERO(&cpuset);
-        CPU_SET(i + NR_RXTX_MODULE, &cpuset);
+        CPU_SET(i + NR_RXTX, &cpuset);
 
         struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
 #ifdef CONFIG_DOCA
@@ -159,6 +161,7 @@ int __init worker_init(void) {
             exit(EXIT_FAILURE);
         }
     }
+#endif
 #endif
     return 0;
 }

@@ -25,6 +25,10 @@ ifdef CONFIG_NR_CPUS
 	CFLAGS	+= -DCONFIG_NR_CPUS=$(CONFIG_NR_CPUS)
 endif
 
+ifdef CONFIG_NR_RXTX
+	CFLAGS	+= -DCONFIG_NR_RXTX=$(CONFIG_NR_RXTX)
+endif
+
 LDFLAGS 	:= -L/usr/lib -lpthread -lrt -ldl -L/home/ubuntu/tinycc -ltcc #$(shell python3-config --ldflags)
 
 # DPDK

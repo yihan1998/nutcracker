@@ -22,7 +22,7 @@ regex_t compiled_rules = {0};
 int rule_count = 0;
 
 int load_regex_rules() {
-    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns/dns_filter_rules_50.txt", "r");
+    FILE *file = fopen("/home/ubuntu/Nutcracker/apps/nf_dns/dns_filter_rules_5.txt", "r");
     if (!file) {
         perror("Failed to open file");
         return -1;

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -80,7 +81,7 @@ int find_matching_rule(const char * domain_name) {
         }
     }
 
-    // printf("No match found for: %s\n", domain_name);
+    printf("No match found for: %s\n", domain_name);
     return -1;  // Return -1 if no match is found
 }
 
