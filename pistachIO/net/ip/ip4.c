@@ -9,7 +9,7 @@
 #include "net/netns/netfilter.h"
 
 // static int ip_route(struct sk_buff * skb) {
-//     rte_ring_enqueue(fwd_rq, skb);
+//     rte_ring_enqueue(nf_rq, skb);
 //     return NET_RX_SUCCESS;
 // }
 
@@ -24,7 +24,7 @@ int ip4_input(struct sk_buff * skb, struct iphdr * iphdr) {
     /* obtain IP header length in number of 32-bit words */
     iphdr_hlen = iphdr->ihl;
     /* calculate IP header length in bytes */
-    iphdr_hlen *= 4;
+    iphdr_hlen <<= 2;
     /* obtain ip length in bytes */
     // iphdr_len = ntohs(iphdr->tot_len);
 
@@ -33,7 +33,9 @@ int ip4_input(struct sk_buff * skb, struct iphdr * iphdr) {
     IPCB(skb)->saddr = iphdr->saddr;
     IPCB(skb)->daddr = iphdr->daddr;
 
-    nf_hook(NF_INET_PRE_ROUTING, skb);
+    if (nf_hook(NF_INET_PRE_ROUTING, skb) == NET_RX_DROP) {
+        return NET_RX_DROP;
+    }
 
     // if (ip_route(skb) == NET_RX_SUCCESS) {
     //     return NET_RX_SUCCESS;

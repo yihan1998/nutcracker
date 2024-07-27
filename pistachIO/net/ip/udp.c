@@ -315,9 +315,9 @@ int udp_output(struct sock * sk) {
 
 		ip4_output(sk, skb, saddr, daddr, pkt, pkt_len);
 
-		pthread_spin_lock(&tx_lock);
+		// pthread_spin_lock(&tx_lock);
 		dpdk_insert_txpkt(pid, m);
-		pthread_spin_unlock(&tx_lock);
+		// pthread_spin_unlock(&tx_lock);
 
 		list_del_init(&skb->list);
 		free_skb(skb);

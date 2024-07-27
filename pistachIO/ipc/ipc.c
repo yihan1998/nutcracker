@@ -14,6 +14,7 @@
 
 #define IPC_PATH    "/tmp/ipc.socket"
 
+int epfd;
 int control_fd;
 
 int __init ipc_init(void) {

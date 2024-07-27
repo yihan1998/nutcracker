@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -11,8 +12,9 @@
 
 #include "opt.h"
 #include "printk.h"
+#include "libc.h"
+#include "entry/syscall.h"
 #include "ipc/ipc.h"
-// #include "kernel/threads.h"
 #include "net/dpdk_module.h"
 #include "loader/loader.h"
 #include "net/net.h"
@@ -20,11 +22,14 @@
 #include "fs/fs.h"
 #include "fs/aio.h"
 #include "kernel/sched.h"
+#include "doca/context.h"
 
 #define MAX_EVENTS  1024
 
 bool kernel_early_boot = true;
 bool kernel_shutdown = false;
+
+struct worker_context * contexts[NR_CPUS];
 
 struct sock_info {
     int parent;
@@ -98,16 +103,75 @@ static int handle_read_event(int epfd, struct epoll_event * ev) {
             return -1;
         }
 
-        compile_and_run((const char *)buffer);
+        // compile_and_run((const char *)buffer);
+        attach_and_run((const char *)buffer);
+    }
+
+    return 0;
+}
+
+int pistachio_control_plane(void) {
+    int new_sockfd, nevent;
+    struct epoll_event events[MAX_EVENTS];
+
+    /* Poll epoll IPC events from workers if there is any */
+    nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
+    for(int i = 0; i < nevent; i++) {
+        /* New worker is connecting to control plane */
+        if (events[i].data.fd == control_fd) {
+            pr_info("Incoming connection!\n");
+            if ((new_sockfd = accept(control_fd, NULL, NULL)) < 0) {
+                pr_err("Failed to accept incoming connection\n");
+                continue;
+            }
+            if (accept_new_connection(epfd, control_fd, new_sockfd) < 0) {
+                pr_err("Failed to register incoming connection\n");
+            }
+            continue;
+        }
+
+        if (events[i].data.fd == loader_fd) {
+            pr_info("Incoming load request!\n");
+            if ((new_sockfd = accept(loader_fd, NULL, NULL)) < 0) {
+                pr_err("Failed to accept incoming connection\n");
+                continue;
+            }
+            if (accept_new_connection(epfd, loader_fd, new_sockfd) < 0) {
+                pr_err("Failed to register incoming connection\n");
+            }
+            continue;
+        }
+
+        if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
+            close(events[i].data.fd);
+            continue;
+        }
+
+        if (events[i].events & EPOLLIN) {
+            handle_read_event(epfd, &events[i]);
+        }
+    }
+
+    return 0;
+}
+
+int main_entry(void * arg) {
+    if (rte_lcore_id() < NR_RXTX) {
+        rxtx_module(NULL);
+    } else {
+        worker_main(NULL);
     }
 
     return 0;
 }
 
 int pistachio_loop(void) {
-    int ret, new_sockfd;
-    int epfd, nevent;
-    struct epoll_event ev, events[MAX_EVENTS];
+    int ret;
+    struct epoll_event ev;
+#if 0
+    int new_sockfd, nevent;
+    struct epoll_event events[MAX_EVENTS];
+#endif
 
     /* Register termination handling callback */
     signal(SIGINT, signal_handler); 
@@ -139,7 +203,7 @@ int pistachio_loop(void) {
         pr_err("<%s:%d> Failed to register epoll event for loader fd %d! (%s)\n", __func__, __LINE__, loader_fd, strerror(errno));
         return -1;
     }
-
+#if 0
     while (1) {
         /* Poll epoll IPC events from workers if there is any */
         nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
@@ -179,12 +243,86 @@ int pistachio_loop(void) {
             }
         }
     }
+#endif
+#if 0
+    uint32_t lcore_id = 0;
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", lcore_id);
+        }
+#endif
+        rte_eal_remote_launch(rxtx_module, ctx, lcore_id);
+    }
+
+    struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", lcore_id);
+        }
+#endif
+
+    rxtx_module(ctx);
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        if (rte_eal_wait_lcore(lcore_id) < 0) {
+			rte_exit(EXIT_FAILURE, "failed to wait\n");
+        }
+    }
+#endif
+
+    for (int i = 0; i < NR_CPUS; i++) {
+        contexts[i] = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(contexts[i]) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", i);
+        }
+#endif
+    }
+
+#if defined(CONFIG_BLUEFIELD2)
+    uint32_t lcore_id = 0;
+    /* Launch per-lcore init on every lcore */
+	rte_eal_mp_remote_launch(main_entry, NULL, CALL_MAIN);
+	// rte_eal_mp_remote_launch(rxtx_module, NULL, CALL_MAIN);
+	// rte_eal_mp_remote_launch(rxtx_module, NULL, SKIP_MAIN);
+    // while (1) {
+    //     pistachio_control_plane();
+    // }
+
+	RTE_LCORE_FOREACH_WORKER(lcore_id) {
+		if (rte_eal_wait_lcore(lcore_id) < 0)
+			return -1;
+	}
+
+	/* clean up the EAL */
+	rte_eal_cleanup();
+#elif defined(CONFIG_OCTEON)
+    uint32_t lcore_id = 0;
+    /* Launch per-lcore init on every lcore */
+	rte_eal_mp_remote_launch(main_entry, NULL, CALL_MASTER);
+	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+		if (rte_eal_wait_lcore(lcore_id) < 0)
+			return -1;
+	}
+
+	/* clean up the EAL */
+	rte_eal_cleanup();
+#endif
+    return 0;
 }
 
 int main(int argc, char ** argv) {
     /* Init DPDK module (packet mempool, RX/TX queue, ...) */
     pr_info("init: starting DPDK...\n");
     dpdk_init(argc, argv);
+
+#ifdef CONFIG_DOCA_REGEX
+    pr_info("init: initializing DOCA...\n");
+    doca_init();
+#endif
 
     kernel_early_boot = false;
 
@@ -213,6 +351,7 @@ int main(int argc, char ** argv) {
 
     void (*preload_aio_init)(void);
     void (*preload_lnftnl_init)(void);
+    void (*preload_ssl_init)(void);
     char *error;
 
     /* Preload libaio */
@@ -247,6 +386,22 @@ int main(int argc, char ** argv) {
     assert(preload_lnftnl_init != NULL);
     preload_lnftnl_init();
 
+    /* Preload ssl */
+    void* libssl_preload = dlopen("./build/lib/libssl.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!libssl_preload) {
+        fprintf(stderr, "Failed to load preload library: %s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
+
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    *(void **) (&preload_ssl_init) = dlsym(libssl_preload, "ssl_init");
+    assert(preload_ssl_init != NULL);
+    preload_ssl_init();
+
 #if 0
     // Open the shared library
     handle = dlopen("/local/yihan/Nutcracker-dev/apps/aio_dns_filter/aio_dns_filter.so", RTLD_NOW);
@@ -267,6 +422,13 @@ int main(int argc, char ** argv) {
     // Call the function
     my_function();
 #endif
+
+    pr_info("init: initializing LIBC...\n");
+    libc_hook_init();
+
+    pr_info("init: initializing SYSCALL...\n");
+    syscall_hook_init();
+
     /* Now enter the main loop */
     pr_info("init: starting pistachIO loop...\n");
     pistachio_loop();

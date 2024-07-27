@@ -1,3 +1,6 @@
+#include <assert.h>
+#include <stdlib.h>
+
 #include "opt.h"
 #include "printk.h"
 #include "linux/netfilter.h"
@@ -21,7 +24,8 @@ struct rte_tailq_entry_head * post_routing_tbl;
 
 static int __nf_register_net_hook(struct net * net, int pf, const struct nf_hook_ops * reg) {
     struct rte_tailq_entry_head * tbl;
-    struct rte_tailq_entry new_entry;
+    // struct rte_tailq_entry new_entry;
+    struct rte_tailq_entry * new_entry = calloc(1, sizeof(struct rte_tailq_entry));
 	struct nf_hook_entry * p = calloc(1, sizeof(struct nf_hook_entry));
 
     switch(reg->hooknum) {
@@ -49,9 +53,9 @@ static int __nf_register_net_hook(struct net * net, int pf, const struct nf_hook
     p->priv = reg->priv;
     p->cond = reg->cond;
 
-    new_entry.data = (void *)p;
-	TAILQ_INSERT_TAIL(tbl, &new_entry, next);
-    pr_debug(NF_DEBUG, "NEW entry: %p, hook: %p, priv: %p\n", p, p->hook, p->priv)
+    new_entry->data = (void *)p;
+	TAILQ_INSERT_TAIL(tbl, new_entry, next);
+    pr_debug(NF_DEBUG, "NEW entry: %p, hook: %p, priv: %p, tailq entry: %p\n", p, p->hook, p->priv, new_entry);
 
 	return 0;
 }

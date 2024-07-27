@@ -1,4 +1,4 @@
-
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <libtcc.h>
 #include <libgen.h>
+#include <dlfcn.h>
 
 #include "opt.h"
 #include "printk.h"
@@ -55,6 +56,29 @@ void search_files(const char * dirpath, char ** files, int * nr_file) {
     closedir(dir);
 }
 
+int attach_and_run(const char * filepath) {
+    void (*entrypoint)(void);
+    char *error;
+
+    void* preload = dlopen(filepath, RTLD_NOW | RTLD_GLOBAL);
+    if (!preload) {
+        fprintf(stderr, "Failed to load preload library: %s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
+
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(EXIT_FAILURE);
+    }
+
+    *(void **) (&entrypoint) = dlsym(preload, "entrypoint");
+    assert(entrypoint != NULL);
+    entrypoint();
+
+    return 0;
+}
+
+#if 0
 int compile_and_run(const char * filepath) {
     FILE * file;
     char * buffer;
@@ -79,18 +103,28 @@ int compile_and_run(const char * filepath) {
     tcc_set_lib_path(s, "/usr/lib/x86_64-linux-gnu/tcc");
 #elif defined(__arm__) || defined(__aarch64__)
     // tcc_set_lib_path(s, "/usr/local/lib");
+#ifdef CONFIG_BLUEFIELD2
     tcc_set_lib_path(s, "/usr/lib/aarch64-linux-gnu/tcc");
+#endif   /* CONFIG_BLUEFIELD2 */
+#ifdef CONFIG_OCTEON
+    tcc_set_lib_path(s, "/usr/local/lib/tcc");
+#endif  /* CONFIG_OCTEON */
 #else
     pr_err("Unknown architecture!\n");
 #endif
-    tcc_add_include_path(s, "/local/yihan/Nutcracker-dev/pistachIO/include/");
+    // tcc_add_library_path(s, "/usr/lib/aarch64-linux-gnu/");
+#ifdef CONFIG_BLUEFIELD2
+    tcc_add_include_path(s, "/home/ubuntu/Nutcracker/pistachIO/include/");
+#endif   /* CONFIG_BLUEFIELD2 */
+#ifdef CONFIG_OCTEON
+    tcc_add_include_path(s, "/root/Nutcracker/pistachIO/include/");
+#endif  /* CONFIG_OCTEON */
     tcc_add_include_path(s, "/usr/include");
 
     search_files(filepath, input_file, &nr_file);
 
     tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
     for (int i = 0; i < nr_file; i++) {
-        // file = fopen("/local/yihan/Nutcracker-dev/tests/socket/socket.c", "rb");
         file = fopen(input_file[i], "rb");
         if (file == NULL) {
             pr_err("Error opening input file\n");
@@ -103,7 +137,7 @@ int compile_and_run(const char * filepath) {
         rewind(file); // Go back to the beginning of the file
 
         // Allocate memory to store the entire file
-        buffer = (char *)malloc(len + 1);
+        buffer = (char *)calloc(len + 1, sizeof(char));
         if (buffer == NULL) {
             pr_err("Memory allocation failed\n");
             fclose(file);
@@ -124,13 +158,19 @@ int compile_and_run(const char * filepath) {
         }
         buffer[bytes_read] = '\0'; // For text files, null-terminate the string
 
-        tcc_compile_string(s, buffer);
+        if (tcc_compile_string(s, buffer) < 0) {
+            pr_err("Could not compile tcc code\n");
+        }
 
         free(buffer);
     }
 
     // Relocate the compiled program into memory
+#if defined(CONFIG_BLUEFIELD2)
+    if (tcc_relocate(s) < 0) {
+#elif defined(CONFIG_OCTEON)
     if (tcc_relocate(s, TCC_RELOCATE_AUTO) < 0) {
+#endif
         pr_err("Could not relocate tcc code\n");
         return 1;
     }
@@ -149,7 +189,7 @@ int compile_and_run(const char * filepath) {
 
     return 0;
 }
-
+#endif
 int __init loader_init(void) {
     struct sockaddr_un address;
 	address.sun_family = AF_UNIX;

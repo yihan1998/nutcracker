@@ -16,18 +16,29 @@
 #include "kernel/sched.h"
 #include "net/net.h"
 #include "net/skbuff.h"
+#include "net/dpdk_module.h"
 #include "fs/fs.h"
+
+#ifdef CONFIG_DOCA
+#include "doca/context.h"
+#endif  /* CONFIG_DOCA */
 
 #define MAX_WORK_BURST  32
 
 unsigned int nr_cpu_ids = NR_CPUS;
 
+DEFINE_PER_CPU(struct worker_context *, worker_ctx);
+
 pthread_t worker_ids[NR_CPUS];
+
+void * worker_main(void * arg);
+
+DEFINE_PER_CPU(unsigned int, cpu_id);
 
 struct rte_ring * worker_rq;
 struct rte_ring * worker_cq;
-struct rte_ring * fwd_rq;
-struct rte_ring * fwd_cq;
+struct rte_ring * nf_rq;
+struct rte_ring * nf_cq;
 
 struct rte_mempool * task_mp;
 
@@ -48,6 +59,12 @@ struct task_struct * create_new_task(void * argp, void (*func)(void *)) {
 
 void * worker_main(void * arg) {
     int nb_recv = 0;
+    // worker_ctx = (struct worker_context *)arg;
+    worker_ctx = contexts[rte_lcore_id()];
+#ifdef CONFIG_DOCA
+    pr_info("Initialze DOCA percore context...\n");
+    doca_percore_init(worker_ctx);
+#endif  /* CONFIG_DOCA */
     // int sec_count = 0;
     // struct timespec curr, last_log;
 
@@ -76,12 +93,17 @@ void * worker_main(void * arg) {
         // }
 
         // work_cnt = rte_ring_dequeue_burst(worker_rq, (void **)tmp_pkts, MAX_WORK_BURST, NULL);
-        nb_recv = rte_ring_dequeue_burst(fwd_rq, (void **)tasks, MAX_WORK_BURST, NULL);
+        nb_recv = rte_ring_dequeue_burst(nf_rq, (void **)tasks, MAX_WORK_BURST, NULL);
         if (nb_recv) {
             for (int i = 0; i < nb_recv; i++) {
                 t = tasks[i];
                 if (t->entry.hook(t->entry.priv, t->skb, NULL) == NF_ACCEPT) {
-                    while (rte_ring_enqueue(fwd_cq, t->skb) < 0);
+                    // while (rte_ring_enqueue(nf_cq, t->skb) < 0);
+                    while (rte_ring_enqueue(nf_cq, t->skb) < 0) {
+                        printf("Failed to enqueue into fwq CQ\n");
+                        // rte_pktmbuf_free(t->skb->m);
+                        // rte_mempool_put(skb_mp, t->skb);
+                    }
                 }
             }
     		rte_mempool_put_bulk(nftask_mp, (void *)tasks, nb_recv);
@@ -91,8 +113,10 @@ void * worker_main(void * arg) {
 }
 
 int __init worker_init(void) {
-    pthread_attr_t attr;
-    cpu_set_t cpuset;
+#ifndef TEST_INLINE
+    // pthread_attr_t attr;
+    // cpu_set_t cpuset;
+#endif
 
     worker_rq = rte_ring_create("worker_rq", 4096, rte_socket_id(), 0);
     assert(worker_rq != NULL);
@@ -100,23 +124,31 @@ int __init worker_init(void) {
     worker_cq = rte_ring_create("worker_cq", 4096, rte_socket_id(), 0);
     assert(worker_cq != NULL);
 
-    fwd_rq = rte_ring_create("fwd_rq", 4096, rte_socket_id(), 0);
-    assert(fwd_rq != NULL);
+    nf_rq = rte_ring_create("nf_rq", 8192, rte_socket_id(), 0);
+    assert(nf_rq != NULL);
 
-    fwd_cq = rte_ring_create("fwd_cq", 4096, rte_socket_id(), 0);
-    assert(fwd_cq != NULL);
+    nf_cq = rte_ring_create("nf_cq", 8192, rte_socket_id(), 0);
+    assert(nf_cq != NULL);
 
     // task_mp = rte_mempool_create("task_mp", 8192, sizeof(struct task_struct), 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     // assert(task_mp != NULL);
-
+#ifndef TEST_INLINE
+#if 0
     // Initialize the thread attribute
     pthread_attr_init(&attr);
 
     /* Create one runtime thread on each possible core */
     // for (int i = 0; i < nr_cpu_ids; i++) {
-    for (int i = 0; i < nr_cpu_ids - 4; i++) {
+    for (int i = 0; i < nr_cpu_ids - NR_RXTX; i++) {
         CPU_ZERO(&cpuset);
-        CPU_SET(i + 4, &cpuset);
+        CPU_SET(i + NR_RXTX, &cpuset);
+
+        struct worker_context * ctx = (struct worker_context *)calloc(1, sizeof(struct worker_context));
+#ifdef CONFIG_DOCA
+        if (doca_worker_init(ctx) != DOCA_SUCCESS) {
+            pr_err("Failed to create work queue for core %d\n", i);
+        }
+#endif
         // Set the CPU affinity in the thread attributes
         if (pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset) != 0) {
             perror("pthread_attr_setaffinity_np");
@@ -124,11 +156,12 @@ int __init worker_init(void) {
         }
 
         // Create the RX path
-        if (pthread_create(&worker_ids[i], &attr, worker_main, NULL) != 0) {
+        if (pthread_create(&worker_ids[i], &attr, worker_main, ctx) != 0) {
             perror("Create RX path failed!");
             exit(EXIT_FAILURE);
         }
     }
-
+#endif
+#endif
     return 0;
 }

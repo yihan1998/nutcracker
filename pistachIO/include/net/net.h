@@ -88,4 +88,12 @@ extern pthread_spinlock_t tx_lock;
 extern int __init inet_init(void);
 extern int __init net_init(void);
 
+#ifndef CONFIG_NR_RXTX
+#define CONFIG_NR_RXTX  1
+#endif
+
+#define NR_RXTX CONFIG_NR_RXTX
+
+extern int rxtx_module(void * arg);
+
 #endif  /* _NET_H_ */

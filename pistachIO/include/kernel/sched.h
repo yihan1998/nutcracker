@@ -7,6 +7,7 @@
 
 #include "init.h"
 #include "list.h"
+#include "percpu.h"
 
 #include <rte_mempool.h>
 
@@ -44,9 +45,13 @@ extern struct task_struct * create_new_task(void * argp, void (*func)(void *));
 extern struct rte_ring * worker_rq;
 extern struct rte_ring * worker_cq;
 
-extern struct rte_ring * fwd_rq;
-extern struct rte_ring * fwd_cq;
+extern struct rte_ring * nf_rq;
+extern struct rte_ring * nf_cq;
 
+DECLARE_PER_CPU(struct rte_ring *, fwd_queue);
+extern void * worker_main(void * arg);
+
+extern int pistachio_control_plane(void);
 extern int __init sched_init(void);
 
 #endif  /* _KERNEL_SCHED_H_ */

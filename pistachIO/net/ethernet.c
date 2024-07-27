@@ -10,12 +10,10 @@ int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct iphdr * iphdr;
     struct sk_buff * skb;
     int ret = NET_RX_SUCCESS;
-    
-    // pthread_spin_lock(&rx_lock);
+
     skb = alloc_skb(pkt, pkt_size);
-    // pthread_spin_unlock(&rx_lock);
     if (!skb) {
-		// pr_warn("Failed to allocate new skbuff!\n");
+		pr_warn("Failed to allocate new skbuff!\n");
 		return NET_RX_DROP;
 	}
 
@@ -28,9 +26,7 @@ int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
         case ETH_P_IP:
             /* pass to IP layer */
             iphdr = (struct iphdr *)&ethhdr[1];
-            // pthread_spin_lock(&rx_lock);
             ret = ip4_input(skb, iphdr);
-            // pthread_spin_unlock(&rx_lock);
             break;
         default:
             break;
