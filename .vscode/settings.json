@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "*.rmd": "markdown",
+        "netdb.h": "c",
+        "iperf_util.h": "c",
+        "net.h": "c",
+        "system_error": "cpp",
+        "printk.h": "c",
+        "assert.h": "c",
+        "stdio.h": "c",
+        "err.h": "c"
+    }
+}

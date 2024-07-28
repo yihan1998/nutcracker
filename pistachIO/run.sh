@@ -1,1 +1,0 @@
-sudo LD_PRELOAD=build/libaio.so ./build/pistachio -l 0 -n 4 -a 4b:00.0
