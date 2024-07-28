@@ -4,7 +4,7 @@ LD := gcc
 SRC_DIR		:= ./
 BUILD_DIR	:= ./build
 DEBUG		:= -DDEBUG
-CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -march=native $(DEBUG) #$(shell python3-config --includes)
+CFLAGS 		:= -Wall -Werror -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -march=native $(DEBUG) $(shell python3-config --includes)
 
 INC 		:= -I/usr/include/ -I./drivers -I./entry -I./include
 CFLAGS 		+= $(INC)
@@ -29,7 +29,7 @@ ifdef CONFIG_NR_RXTX
 	CFLAGS	+= -DCONFIG_NR_RXTX=$(CONFIG_NR_RXTX)
 endif
 
-LDFLAGS 	:= -L/usr/lib -lssl -lcrypto -lpthread -lrt -ldl -L/home/ubuntu/tinycc -ltcc #$(shell python3-config --ldflags)
+LDFLAGS 	:= -L/usr/lib -lssl -lcrypto -lpthread -lrt -ldl -L/home/ubuntu/tinycc -ltcc $(shell python3-config --ldflags) -lpython3.10
 
 # DPDK
 ifeq ($(CONFIG_OCTEON),y)

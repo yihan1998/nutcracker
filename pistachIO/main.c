@@ -351,7 +351,7 @@ int main(int argc, char ** argv) {
 
     void (*preload_aio_init)(void);
     void (*preload_lnftnl_init)(void);
-    void (*preload_ssl_init)(void);
+    // void (*preload_ssl_init)(void);
     char *error;
 
     /* Preload libaio */
@@ -385,7 +385,7 @@ int main(int argc, char ** argv) {
     *(void **) (&preload_lnftnl_init) = dlsym(libnftnl_preload, "nftnl_init");
     assert(preload_lnftnl_init != NULL);
     preload_lnftnl_init();
-
+#if 0
     /* Preload ssl */
     void* libssl_preload = dlopen("./build/lib/libssl.so", RTLD_NOW | RTLD_GLOBAL);
     if (!libssl_preload) {
@@ -401,7 +401,7 @@ int main(int argc, char ** argv) {
     *(void **) (&preload_ssl_init) = dlsym(libssl_preload, "ssl_init");
     assert(preload_ssl_init != NULL);
     preload_ssl_init();
-
+#endif
 #if 0
     // Open the shared library
     handle = dlopen("/local/yihan/Nutcracker-dev/apps/aio_dns_filter/aio_dns_filter.so", RTLD_NOW);

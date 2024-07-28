@@ -9,6 +9,7 @@
 #include <libtcc.h>
 #include <libgen.h>
 #include <dlfcn.h>
+#include <Python.h>
 
 #include "opt.h"
 #include "printk.h"
@@ -56,7 +57,118 @@ void search_files(const char * dirpath, char ** files, int * nr_file) {
     closedir(dir);
 }
 
-int attach_and_run(const char * filepath) {
+const char *get_file_extension(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot || dot == filename) return NULL;
+    return dot + 1;
+}
+
+const void strip_py_extension(char *filename) {
+    char *dot = strrchr(filename, '.');
+    if (dot != NULL && strcmp(dot, ".py") == 0) {
+        *dot = '\0';
+    }
+}
+
+// const char * extract_directory(const char *filepath) {
+//     // Copy the filepath because dirname modifies the input string
+//     char filepath_copy[1024];
+//     strncpy(filepath_copy, filepath, sizeof(filepath_copy));
+
+//     // Ensure null termination
+//     filepath_copy[sizeof(filepath_copy) - 1] = '\0';
+
+//     // Extract the directory path
+//     return dirname(filepath_copy);
+// }
+
+void call_python_function(const char *script_path, const char *module_name, const char *function_name) {
+    printf("Initializing Python interpreter...\n");
+    
+    // Initialize the Python interpreter
+    Py_Initialize();
+    if (!Py_IsInitialized()) {
+        fprintf(stderr, "Failed to initialize Python interpreter\n");
+        return;
+    }
+
+    printf("Setting Python path...\n");
+    // Set the Python path to include the directory of the script
+    PyObject *sys_path = PySys_GetObject("path");
+    PyObject *path = PyUnicode_DecodeFSDefault(script_path);
+    if (sys_path && path) {
+        PyList_Append(sys_path, path);
+        Py_DECREF(path);
+    } else {
+        PyErr_Print();
+        fprintf(stderr, "Failed to set Python path\n");
+        Py_Finalize();
+        return;
+    }
+
+    printf("-> Script path: %s\n", script_path);
+
+    printf("Importing module...\n");
+    // Import the module
+    PyObject *pName = PyUnicode_DecodeFSDefault(module_name);
+    PyObject *pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (pModule != NULL) {
+        printf("Getting function from module...\n");
+        // Get the function from the module
+        PyObject *pFunc = PyObject_GetAttrString(pModule, function_name);
+        if (pFunc && PyCallable_Check(pFunc)) {
+            // Call the function
+            printf("Calling function...\n");
+            PyObject *pValue = PyObject_CallObject(pFunc, NULL);
+            if (pValue != NULL) {
+                printf("Result of call: %ld\n", PyLong_AsLong(pValue));
+                Py_DECREF(pValue);
+            } else {
+                PyErr_Print();
+                fprintf(stderr, "Call failed\n");
+            }
+            Py_XDECREF(pFunc);
+        } else {
+            if (PyErr_Occurred())
+                PyErr_Print();
+            fprintf(stderr, "Cannot find function \"%s\"\n", function_name);
+        }
+        Py_DECREF(pModule);
+    } else {
+        PyErr_Print();
+        fprintf(stderr, "Failed to load \"%s\"\n", module_name);
+    }
+
+    // Finalize the Python interpreter
+    Py_Finalize();
+}
+
+int attach_python_function(const char * filepath) {
+    char path[strlen(filepath) + 1];  // +1 for the null terminator
+    strcpy(path, filepath);
+
+    char * name = basename(path);
+    const char * dir = dirname(path);
+    strip_py_extension(name);
+
+    printf("Path: %s, name: %s\n", dir, name);
+
+    // call_python_function(dir, name, "entrypoint");
+
+    const char *script_path = "/home/ubuntu/Nutcracker/apps/recommendation";
+
+    printf("Dir: %s, script path: %s(compare: %s)\n", dir, script_path, (strcmp(dir, script_path) == 0)? "SAME" : "NOT SAME");
+    // const char *module_name = "server"; // Module name without the .py extension
+
+    // call_python_function(script_path, name, "entrypoint");
+    call_python_function(dir, name, "entrypoint");
+
+    return 0;
+}
+
+int attach_c_function(const char * filepath) {
     void (*entrypoint)(void);
     char *error;
 
@@ -74,6 +186,28 @@ int attach_and_run(const char * filepath) {
     *(void **) (&entrypoint) = dlsym(preload, "entrypoint");
     assert(entrypoint != NULL);
     entrypoint();
+
+    return 0;
+}
+
+int attach_and_run(const char * filepath) {
+    char path[strlen(filepath) + 1];  // +1 for the null terminator
+    strcpy(path, filepath);
+
+    char * name = basename(path);
+    const char *extension = get_file_extension(name);
+
+    if (extension) {
+        if (strcmp(extension, "so") == 0) {
+            attach_c_function(filepath);
+        } else if (strcmp(extension, "py") == 0) {
+            attach_python_function(filepath);
+        } else {
+            printf("Unsupported file type: %s\n", extension);
+        }
+    } else {
+        printf("No file extension found.\n");
+    }
 
     return 0;
 }
