@@ -14,6 +14,9 @@ extern "C" {
 #include <doca_error.h>
 #include <doca_dev.h>
 #include <doca_log.h>
+#ifdef CONFIG_BLUEFIELD3
+#include <doca_pe.h>
+#endif
 
 struct buf_info {
     char * data;
