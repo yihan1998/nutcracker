@@ -681,7 +681,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match, NULL, 
                             NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
-		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return -1;
 	}
 #endif
