@@ -204,6 +204,7 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 }
 
 int build_hairpin_pipe(uint16_t port_id) {
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
@@ -244,9 +245,78 @@ int build_hairpin_pipe(uint16_t port_id) {
 	}
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
-	if (result != DOCA_SUCCESS)
+	if (result != DOCA_SUCCESS) {
 		return -1;
+	}
+#elif CONFIG_BLUEFIELD3
+	struct doca_flow_match match;
+	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
+	struct doca_flow_fwd fwd;
+	struct doca_flow_pipe_cfg *pipe_cfg;
+	doca_error_t result;
 
+	memset(&match, 0, sizeof(match));
+	memset(&actions, 0, sizeof(actions));
+	memset(&fwd, 0, sizeof(fwd));
+
+	actions_arr[0] = &actions;
+
+	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_name(pipe_cfg, "HAIRPIN_PIPE");
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_type(pipe_cfg, DOCA_FLOW_PIPE_BASIC);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg type: %s", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg is_root: %s", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, NULL);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+
+	/* forwarding traffic to other port */
+	fwd.type = DOCA_FLOW_FWD_PORT;
+	fwd.port_id = port_id ^ 1;
+
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	if (result != DOCA_SUCCESS) {
+		free(status);
+		return -1;
+	}
+
+	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &entry);
+	if (result != DOCA_SUCCESS) {
+		free(status);
+		return -1;
+	}
+
+	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
+	if (result != DOCA_SUCCESS) {
+		return -1;
+	}
+#endif
 	return 0;
 }
 
