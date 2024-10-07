@@ -35,16 +35,19 @@ int __init docadv_ctx_fetch(struct docadv_context * ctx) {
 int __init docadv_ctx_init(struct docadv_context * ctx) {
     doca_error_t result;
 
+#ifdef CONFIG_BLUEFIELD2
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to create work queue. Reason: %s", doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		printf("Unable to create work queue. Reason: %s", doca_error_get_descr(result));
-#endif
 		return result;
 	}
-
+#elif CONFIG_BLUEFIELD3
+    result = doca_pe_create(&ctx->pe);
+	if (result != DOCA_SUCCESS) {
+		printf("Unable to create work queue. Reason: %s", doca_error_get_descr(result));
+		return result;
+	}
+#endif
     return DOCA_SUCCESS;
 }
 

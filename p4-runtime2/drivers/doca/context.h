@@ -16,7 +16,11 @@ extern "C" {
 
 struct docadv_context {
 #ifdef CONFIG_DOCA
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_workq * workq;   /* DOCA work queue */
+#elif CONFIG_BLUEFIELD3
+	struct doca_pe  * pe;		    /* doca progress engine */
+#endif
 #ifdef CONFIG_DOCA_REGEX
     struct regex_ctx regex_ctx;
 #endif  /* CONFIG_DOCA_REGEX */
