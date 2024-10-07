@@ -55,6 +55,15 @@ ifeq ($(CONFIG_BLUEFIELD2),y)
 		endif
 	endif
 else ifeq ($(CONFIG_BLUEFIELD3),y)
+	CXXFLAGS_CLANG	+= -DCONFIG_BLUEFIELD3
+	CFLAGS_GCC		+= -DCONFIG_BLUEFIELD3
+
+	LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
+	LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
+	CXXFLAGS_CLANG += $(LIBDPDK_CFLAGS)
+	CFLAGS_GCC += $(LIBDPDK_CFLAGS)
+	LDFLAGS += $(LIBDPDK_LDFLAGS)
+
 	ifeq ($(CONFIG_DOCA),y)
 		LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-common)
 		LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-common)
