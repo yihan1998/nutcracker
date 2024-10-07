@@ -911,14 +911,14 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 
 	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 	if (result != DOCA_SUCCESS) {
-		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 
 		return -1;
 	}
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS) {
-		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return -1;
 	}
 #endif
