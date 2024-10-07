@@ -697,6 +697,7 @@ int doca_hw_control_pipe_add_entry(struct flow_pipe* pipe, int priority, struct 
 }
 
 int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd) {
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match doca_match;
 	struct doca_flow_actions doca_actions;
 	struct doca_flow_fwd doca_fwd;
@@ -807,24 +808,120 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 
 	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-#endif
+
 		return -1;
 	}
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		return -1;
+	}
 #elif CONFIG_BLUEFIELD3
-		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-#endif
+    struct doca_flow_match doca_match;
+	struct doca_flow_actions doca_actions;
+	struct doca_flow_fwd doca_fwd;
+	struct doca_flow_pipe_entry *entry;
+	struct entries_status status = {0};
+	int num_of_entries = 1;
+	doca_error_t result;
+
+	printf(GREEN "[INFO]" RESET " Adding entry to pipe on port %d...\n", port_id);
+
+	memset(&doca_match, 0, sizeof(doca_match));
+	memset(&doca_actions, 0, sizeof(doca_actions));
+	memset(&doca_fwd, 0, sizeof(doca_fwd));
+
+	if (match) {
+		/* Set match.meta */
+		doca_match.meta.pkt_meta = match->meta.pkt_meta;
+		memcpy(doca_match.meta.u32, match->meta.u32, 4 * sizeof(uint32_t));
+
+		if (match->outer.l3_type == FLOW_L3_TYPE_IP4) {
+			doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+			switch (match->outer.l4_type_ext)
+			{
+				case FLOW_L4_TYPE_EXT_UDP:
+					doca_match.outer.udp.l4_port.dst_port = htons(match->outer.udp.dest);
+					doca_match.outer.udp.l4_port.src_port = htons(match->outer.udp.source);
+					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					break;
+
+				case FLOW_L4_TYPE_EXT_TCP:
+					doca_match.outer.ip4.dst_ip = match->outer.ip4.daddr;
+					doca_match.outer.ip4.src_ip = match->outer.ip4.saddr;
+					doca_match.outer.tcp.l4_port.dst_port = match->outer.tcp.dest;
+					doca_match.outer.tcp.l4_port.src_port = match->outer.tcp.source;
+					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TCP;
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
+	if (actions) {
+		if (actions->meta.pkt_meta) {
+			doca_actions.meta.pkt_meta = actions->meta.pkt_meta;
+		}
+		if (actions->has_encap) {
+            doca_actions.encap_cfg.is_l2 = true;
+            doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+			memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, actions->outer.eth.h_source, ETH_ALEN);
+			memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, actions->outer.eth.h_dest, ETH_ALEN);
+			doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+			doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(actions->outer.ip4.saddr);
+			doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(actions->outer.ip4.daddr);
+			doca_actions.encap_cfg.encap.outer.ip4.ttl = 17;
+			doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+			doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(actions->outer.udp.source);
+			doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(actions->outer.udp.dest);
+			doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
+			doca_actions.encap_cfg.encap.tun.vxlan_tun_id = actions->encap.tun.vxlan_tun_id;	
+		} else {
+			uint8_t src_mac[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+			uint8_t dst_mac[] = {0x10, 0x70, 0xFD, 0xC8, 0x94, 0x75};
+			SET_MAC_ADDR(doca_actions.outer.eth.src_mac, src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5]);
+			SET_MAC_ADDR(doca_actions.outer.eth.dst_mac, dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
+			doca_actions.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+		}
+	}
+
+	if (fwd) {
+		if (fwd->type == FLOW_FWD_RSS) {
+			doca_fwd.next_pipe = rss_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_HAIRPIN) {
+			doca_fwd.next_pipe = hairpin_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_PORT) {
+			doca_fwd.port_id = port_id;
+			doca_fwd.type = DOCA_FLOW_FWD_PORT;
+		} else if (fwd->type == FLOW_FWD_PIPE) {
+			doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_DROP) {
+			doca_fwd.type = DOCA_FLOW_FWD_DROP;
+		} else {
+			printf("Unknown fwd type! (%d)\n", fwd->type);
+		}
+	}
+
+	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
+	if (result != DOCA_SUCCESS) {
+		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+
 		return -1;
 	}
 
+	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
+	if (result != DOCA_SUCCESS) {
+		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		return -1;
+	}
+#endif
 	return DOCA_SUCCESS;
 }
 
