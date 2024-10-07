@@ -154,10 +154,10 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 			rss_queue_list[queue_index] = config->port_config.nb_queues + queue_index * 2;
 		result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 			printf("Cannot hairpin self port %" PRIu8 ", ret: %s",
 				     port, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 			printf("Cannot hairpin self port %" PRIu8 ", ret: %s",
 				     port, doca_error_get_descr(result));
 #endif
@@ -167,10 +167,10 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 			rss_queue_list[queue_index] = config->port_config.nb_queues + queue_index * 2 + 1;
 		result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s",
 				     port ^ 1, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s",
 				     port ^ 1, doca_error_get_descr(result));
 #endif

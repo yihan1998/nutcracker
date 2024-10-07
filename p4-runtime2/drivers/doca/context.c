@@ -18,9 +18,9 @@ int __init docadv_ctx_fetch(struct docadv_context * ctx) {
 
     res = doca_buf_inventory_create(NULL, 2, DOCA_BUF_EXTENSION_NONE, &compress_ctx->buf_inv);
 	if (res != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to create buffer inventory: %s", doca_get_error_string(res));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to create buffer inventory: %s", doca_error_get_descr(res));
 #endif
 		return res;
@@ -37,9 +37,9 @@ int __init docadv_ctx_init(struct docadv_context * ctx) {
 
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to create work queue. Reason: %s", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to create work queue. Reason: %s", doca_error_get_descr(result));
 #endif
 		return result;

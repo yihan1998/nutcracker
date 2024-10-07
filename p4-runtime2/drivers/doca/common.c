@@ -78,9 +78,9 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_create(NULL, &info->mmap);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to create doca_mmap. Reason: %s\n", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to create doca_mmap. Reason: %s\n", doca_error_get_descr(result));
 #endif
 		return 0;
@@ -88,9 +88,9 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_dev_add(info->mmap, dev);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to add device to doca_mmap. Reason: %s\n", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to add device to doca_mmap. Reason: %s\n", doca_error_get_descr(result));
 #endif
 		return 0;
@@ -98,9 +98,9 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_set_memrange(info->mmap, info->data, info->size);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to set memory range of source memory map: %s", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to set memory range of source memory map: %s", doca_error_get_descr(result));
 #endif
 		return result;
@@ -108,9 +108,9 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_start(info->mmap);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Unable to start source memory map: %s", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Unable to start source memory map: %s", doca_error_get_descr(result));
 #endif
 		return result;
@@ -170,9 +170,9 @@ int init_doca_flow(int nb_queues, const char *mode, struct doca_flow_resources r
 		flow_cfg.nr_shared_resources[shared_resource_idx] = nr_shared_resources[shared_resource_idx];
 	result = doca_flow_init(&flow_cfg);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf("Failed to init DOCA Flow: %s\n", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf("Failed to init DOCA Flow: %s\n", doca_error_get_descr(result));
 #endif
 		return -1;
@@ -314,9 +314,9 @@ int doca_init(void) {
 
     result = init_doca_flow(dpdk_config.port_config.nb_queues, "vnf,hws", resource, nr_shared_resources);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to init DOCA Flow: %s\n", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		pr_err("Failed to init DOCA Flow: %s\n", doca_error_get_descr(result));
 #endif
 		return result;
@@ -326,9 +326,9 @@ int doca_init(void) {
 
 	result = init_doca_flow_ports(dpdk_config.port_config.nb_ports, ports, true);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to init DOCA ports: %s\n", doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		pr_err("Failed to init DOCA ports: %s\n", doca_error_get_descr(result));
 #endif
 		doca_flow_destroy();

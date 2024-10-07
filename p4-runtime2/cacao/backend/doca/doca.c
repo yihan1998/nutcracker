@@ -199,9 +199,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 	result = doca_flow_pipe_create(&doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 		return result;
@@ -210,9 +210,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	if (doca_fwd_ptr) {
 		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 			return -1;
@@ -220,9 +220,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 		result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 		if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 			return -1;
@@ -284,9 +284,9 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 
 	result = doca_flow_pipe_create(&doca_cfg, NULL, doca_fwd_miss_ptr, pipe);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 		return -1;
@@ -353,9 +353,9 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match,
 						 NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 		return -1;
@@ -483,9 +483,9 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 
 	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 		return -1;
@@ -493,9 +493,9 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS) {
-#if CONFIG_BLUEFIELD2
+#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#else if CONFIG_BLUEFIELD3
+#elif CONFIG_BLUEFIELD3
 		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 #endif
 		return -1;
