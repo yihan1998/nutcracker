@@ -65,8 +65,8 @@ else ifeq ($(CONFIG_BLUEFIELD3),y)
 	LDFLAGS += $(LIBDPDK_LDFLAGS)
 
 	ifeq ($(CONFIG_DOCA),y)
-		LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-common)
-		LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-common)
+		LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-common) $(shell pkg-config --cflags doca-flow)
+		LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-common) $(shell pkg-config --libs doca-flow)
 		CXXFLAGS_CLANG += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
 		CFLAGS_GCC += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
 		LDFLAGS += $(LIBDOCA_LDFLAGS)

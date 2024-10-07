@@ -177,13 +177,15 @@ struct pipe_operations {
     int (*add_pipe_entry)(struct flow_pipe * pipe, const char * action_name, ...);
 };
 
+#define DOCA_MAX_PORTS  2
+
 struct hw_flow_pipe {
-    struct doca_flow_pipe * pipe[MAX_PORTS];
+    struct doca_flow_pipe * pipe[DOCA_MAX_PORTS];
     struct pipe_operations ops;
 };
 
 struct sw_flow_pipe {
-    void * pipe[MAX_PORTS];
+    void * pipe[DOCA_MAX_PORTS];
     struct pipe_operations ops;
 };
 
