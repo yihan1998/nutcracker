@@ -65,6 +65,10 @@ else ifeq ($(CONFIG_BLUEFIELD3),y)
 	LDFLAGS += $(LIBDPDK_LDFLAGS)
 
 	ifeq ($(CONFIG_DOCA),y)
+		SUBDIRS	+= drivers/doca
+		CXXFLAGS_CLANG	+= -DCONFIG_DOCA
+		CFLAGS_GCC	+= -DCONFIG_DOCA
+
 		LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-common)
 		LIBDOCA_CFLAGS += $(shell pkg-config --cflags doca-flow)
 		LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-common)

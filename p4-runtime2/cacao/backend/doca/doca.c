@@ -270,15 +270,16 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-    result = doca_flow_pipe_cfg_set_match(pipe_cfg, &doca_match, NULL);
+    result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg match: %s", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		return result;
 	}
-	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, doca_actions_arr, NULL, NULL, 1);
+
+	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, 1);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg actions: %s", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		return result;
 	}
 
 	if (pipe_cfg->match) {
@@ -332,7 +333,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 				doca_actions.meta.pkt_meta = action->meta.pkt_meta;
 			}
 			if (action->has_encap) {
-				doca_actions.has_encap = true;
+            	doca_actions.encap_cfg.is_l2 = true;
+            	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 				memcpy(doca_actions.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
 				memcpy(doca_actions.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
 				doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
@@ -409,20 +411,20 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 	result = doca_flow_pipe_create(doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
-		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
 	}
 
 	if (doca_fwd_ptr) {
 		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 			return -1;
 		}
 
 		result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 			return -1;
 		}
 	}
