@@ -594,7 +594,6 @@ int build_rss_pipe(uint16_t port_id) {
 		return -1;
 	}
 #endif
-#endif
 	return 0;
 }
 
