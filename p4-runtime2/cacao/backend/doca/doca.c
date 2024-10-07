@@ -199,20 +199,32 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 	result = doca_flow_pipe_create(&doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 		return result;
 	}
 
 	if (doca_fwd_ptr) {
 		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 			return -1;
 		}
 
 		result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 		if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 			return -1;
 		}
 	}
@@ -272,7 +284,11 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 
 	result = doca_flow_pipe_create(&doca_cfg, NULL, doca_fwd_miss_ptr, pipe);
 	if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 		return -1;
 	}
 	return 0;
@@ -337,7 +353,11 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match,
 						 NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 		return -1;
 	}
 
@@ -463,13 +483,21 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 
 	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 	if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 		return -1;
 	}
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+#else if CONFIG_BLUEFIELD3
+		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+#endif
 		return -1;
 	}
 
@@ -514,101 +542,5 @@ int vxlan_encap_offloading() {
 			}
 		}
 	}
-#if 0
-	struct flow_pipe *pipe = instantialize_flow_pipe("egress_vxlan_encap_tbl_2");
-	{
-		struct flow_pipe_cfg pipe_cfg;
-		struct flow_match match;
-		struct flow_actions actions;
-		struct flow_actions* actions_arr[1];
-		struct flow_fwd fwd;
-		// struct doca_flow_pipe_entry *entry;
-		// struct entries_status status = {0};
-		// int num_of_entries = 1;
-		// int port_id = 0;
-
-		memset(&pipe_cfg,0,sizeof(pipe_cfg));
-		memset(&match,0,sizeof(match));
-		memset(&actions,0,sizeof(actions));
-		memset(&fwd,0,sizeof(fwd));
-
-		actions_arr[0]=&actions;
-		pipe_cfg.attr.name="egress_vxlan_encap_tbl_2";
-		pipe_cfg.attr.type=FLOW_PIPE_BASIC;
-		pipe_cfg.attr.is_root=true;
-		pipe_cfg.attr.domain=FLOW_PIPE_DOMAIN_EGRESS;
-		pipe_cfg.match=&match;
-		pipe_cfg.actions=actions_arr;
-		pipe_cfg.attr.nb_actions=1;
-		// match.meta.pkt_meta=0xffffffff;
-		match.outer.l4_type_ext=FLOW_L4_TYPE_EXT_UDP;
-		match.outer.l3_type=FLOW_L3_TYPE_IP4;
-		match.outer.udp.dest=0xffff;
-		// actions.meta.pkt_meta=0xffffffff;
-		// fwd.type = FLOW_FWD_DROP;
-		flow_create_hw_pipe(&pipe_cfg,0,0,pipe);
-#if 0
-		struct doca_flow_match doca_match;
-		struct doca_flow_fwd doca_fwd;
-		struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTION_ARRAY];
-		struct doca_flow_pipe_cfg doca_cfg;
-		struct doca_flow_pipe *doca_pipe;
-		doca_error_t result;
-
-		memset(&doca_match, 0, sizeof(doca_match));
-		memset(&doca_actions, 0, sizeof(doca_actions));
-		memset(&doca_fwd, 0, sizeof(doca_fwd));
-		memset(&doca_cfg, 0, sizeof(doca_cfg));
-
-		doca_cfg.attr.name = pipe_cfg.attr.name;
-		doca_cfg.attr.type = DOCA_FLOW_PIPE_BASIC;
-		doca_cfg.attr.is_root = pipe_cfg.attr.is_root;
-		doca_cfg.attr.domain = (pipe_cfg.attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
-		doca_cfg.port = ports[0];
-
-		doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-		doca_match.outer.l3_type = FLOW_L3_TYPE_IP4;
-		doca_match.outer.udp.l4_port.dst_port = htons(match.outer.udp.dest);
-
-		doca_actions.meta.pkt_meta = UINT32_MAX;
-		doca_cfg.attr.nb_actions = NB_ACTIONS_ARR;
-		doca_actions_arr[0] = &doca_actions;
-		doca_cfg.actions = doca_actions_arr;
-		doca_cfg.match = &doca_match;
-	
-		result = doca_flow_pipe_create(&doca_cfg, NULL, NULL, &doca_pipe);
-		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-			return result;
-#endif
-	}
-	{
-		struct flow_match match;
-		struct flow_actions actions;
-		struct flow_fwd fwd;
-		memset(&match,0,sizeof(match));
-		memset(&actions,0,sizeof(actions));
-		memset(&fwd,0,sizeof(fwd));
-		match.outer.l4_type_ext=FLOW_L4_TYPE_EXT_UDP;
-		match.outer.l3_type=FLOW_L3_TYPE_IP4;
-		match.outer.udp.dest=1234;
-		// actions.meta.pkt_meta=flow_get_pipe_id_by_name(next_action);
-		fwd.type=FLOW_FWD_DROP;
-		flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
-#if 0
-		struct doca_flow_match doca_match;
-		struct doca_flow_actions doca_actions;
-		struct doca_flow_fwd doca_fwd;
-		struct doca_flow_pipe_entry *entry;
-		struct entries_status status = {0};
-		int num_of_entries = 1;
-		doca_error_t result;
-
-		doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-		doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-		doca_match.outer.udp.l4_port.dst_port = htons(match.outer.udp.dest);
-#endif
-	}
-#endif
 	return DOCA_SUCCESS;
 }
