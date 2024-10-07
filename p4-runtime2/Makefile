@@ -5,7 +5,7 @@ DEBUG	= -DDEBUG
 CXXFLAGS = -Wall -Werror -O3 -g  -I./ -I./include $(DEBUG)
 CXXFLAGS_CLANG = $(CXXFLAGS)
 
-CFLAGS = -Wall -Werror -O3 -g -march=native -std=gnu11 -I./ -I./include -I./common/entry $(DEBUG)
+CFLAGS = -Wall -Werror -O3 -g -std=gnu11 -I./ -I./include -I./common/entry $(DEBUG)
 CFLAGS_GCC = $(CFLAGS)
 
 LLVM_CXXFLAGS := $(shell llvm-config --cxxflags) -I./common/entry
