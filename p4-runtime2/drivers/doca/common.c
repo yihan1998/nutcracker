@@ -27,6 +27,11 @@ struct entries_status {
 	void *ft_entry;		/* pointer to struct vxlan_fwd_ft_entry */
 };
 
+struct flow_resources {
+	uint32_t nr_counters; /* number of counters to configure */
+	uint32_t nr_meters;   /* number of traffic meters to configure */
+};
+
 #define NB_ACTION_ARRAY	(1)
 
 #define PULL_TIME_OUT 10000
@@ -117,7 +122,7 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_add_dev(info->mmap, dev);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to add device to doca_mmap. Reason: %s\n", doca_get_error_string(result));
+		printf("Unable to add device to doca_mmap. Reason: %s\n", doca_error_get_descr(result));
 		return 0;
 	}
 #endif
@@ -142,7 +147,11 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 		return result;
 	}
 
+#ifdef CONFIG_BLUEFIELD2
 	if (doca_buf_inventory_buf_by_addr(buf_inv, info->mmap, info->data, info->size, &info->buf) != DOCA_SUCCESS) {
+#elif CONFIG_BLUEFIELD3
+	if (doca_buf_inventory_buf_get_by_addr(buf_inv, info->mmap, info->data, info->size, &info->buf) != DOCA_SUCCESS) {
+#endif
         printf("Failed to create inventory buf!\n");
         return 0;
     }
@@ -214,8 +223,7 @@ static doca_error_t create_doca_flow_port(int port_id,
 destroy_port_cfg:
 	tmp_result = doca_flow_port_cfg_destroy(port_cfg);
 	if (tmp_result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to destroy doca_flow port: %s", doca_error_get_descr(tmp_result));
-		DOCA_ERROR_PROPAGATE(result, tmp_result);
+		printf("Failed to destroy doca_flow port: %s\n", doca_error_get_descr(tmp_result));
 	}
 
 	return result;
@@ -248,18 +256,9 @@ int init_doca_flow(int nb_queues, const char *mode, struct doca_flow_resources r
 int init_doca_flow(int nb_queues, const char *mode, struct flow_resources *resource, uint32_t nr_shared_resources[])
 {
 	struct doca_flow_cfg *flow_cfg;
-	int shared_resource_idx;
 	doca_error_t result;
 	uint16_t qidx, rss_queues[nb_queues];
 	struct doca_flow_resource_rss_cfg rss = {0};
-
-	// memset(&flow_cfg, 0, sizeof(flow_cfg));
-
-	// flow_cfg.queues = nb_queues;
-	// flow_cfg.mode_args = mode;
-	// flow_cfg.resource = resource;
-	// for (shared_resource_idx = 0; shared_resource_idx < DOCA_FLOW_SHARED_RESOURCE_MAX; shared_resource_idx++)
-	// 	flow_cfg.nr_shared_resources[shared_resource_idx] = nr_shared_resources[shared_resource_idx];
 
 	result = doca_flow_cfg_create(&flow_cfg);
 	if (result != DOCA_SUCCESS) {
@@ -330,7 +329,7 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 	return 0;
 }
 #elif CONFIG_BLUEFIELD3
-int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_hairpin, struct doca_dev *dev_arr[]) {
+int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_hairpin, struct doca_dev *dev_arr[], enum doca_flow_port_operation_state *states) {
 	int portid;
 
 	for (portid = 0; portid < nb_ports; portid++) {
@@ -339,8 +338,6 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 		result = create_doca_flow_port(portid, dev_arr[portid], state, &ports[portid]);
 		if (result != DOCA_SUCCESS) {
 			printf("Failed to start port: %s\n", doca_error_get_descr(result));
-			if (portid != 0)
-				stop_doca_flow_ports(portid, ports);
 			return result;
 		}
 		/* Pair ports should be done in the following order: port0 with port1, port2 with port3 etc */
@@ -350,7 +347,6 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 		result = doca_flow_port_pair(ports[portid], ports[portid ^ 1]);
 		if (result != DOCA_SUCCESS) {
 			printf("Failed to pair ports %u - %u\n", portid, portid ^ 1);
-			stop_doca_flow_ports(portid + 1, ports);
 			return result;
 		}
 	}
@@ -405,7 +401,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 	}
 #elif CONFIG_BLUEFIELD3
 	struct doca_flow_match match;
-	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
+	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
@@ -445,7 +441,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
-	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTION_ARRAY);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
@@ -457,13 +453,11 @@ int build_hairpin_pipe(uint16_t port_id) {
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
 	if (result != DOCA_SUCCESS) {
-		free(status);
 		return -1;
 	}
 
 	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &entry);
 	if (result != DOCA_SUCCESS) {
-		free(status);
 		return -1;
 	}
 
@@ -476,6 +470,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 }
 
 int build_rss_pipe(uint16_t port_id) {
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd, fwd_miss;
@@ -528,7 +523,78 @@ int build_rss_pipe(uint16_t port_id) {
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS)
 		return -1;
+#elif CONFIG_BLUEFIELD3
+	struct doca_flow_match match;
+	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
+	struct doca_flow_fwd fwd;
+	struct doca_flow_pipe_cfg *pipe_cfg;
+		uint16_t rss_queues[1];
+	doca_error_t result;
 
+	memset(&match, 0, sizeof(match));
+	memset(&actions, 0, sizeof(actions));
+	memset(&fwd, 0, sizeof(fwd));
+
+	actions_arr[0] = &actions;
+
+	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_name(pipe_cfg, "RSS_PIPE");
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_type(pipe_cfg, DOCA_FLOW_PIPE_BASIC);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, NULL);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTION_ARRAY);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+
+	/* RSS queue - send matched traffic to queue 0  */
+	rss_queues[0] = 0;
+	fwd.type = DOCA_FLOW_FWD_RSS;
+	fwd.rss_queues = rss_queues;
+	fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_UDP;
+	fwd.num_of_queues = 1;
+
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	if (result != DOCA_SUCCESS) {
+		return -1;
+	}
+
+	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &entry);
+	if (result != DOCA_SUCCESS) {
+		return -1;
+	}
+
+	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
+	if (result != DOCA_SUCCESS) {
+		return -1;
+	}
+#endif
+#endif
 	return 0;
 }
 
