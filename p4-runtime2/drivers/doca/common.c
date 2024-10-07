@@ -124,19 +124,7 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 	return DOCA_SUCCESS;
 }
 
-/**
- * @brief Creates a DOCA flow port with the specified port ID.
- * 
- * This function initializes a DOCA flow port configuration structure, 
- * sets the port ID and its type, and starts the port. It constructs the 
- * device arguments from the port ID, ensuring it is correctly formatted.
- * 
- * @param port_id The ID of the port to be created. This should be a valid 
- *                port identifier as required by the DOCA framework.
- * 
- * @return A pointer to the created `doca_flow_port` structure if successful; 
- *         otherwise, NULL if the port could not be started.
- */
+#ifdef CONFIG_BLUEFIELD2
 static struct doca_flow_port *_create_doca_flow_port(int port_id) {
 	int max_port_str_len = 128;
 	struct doca_flow_port_cfg port_cfg;
@@ -155,7 +143,60 @@ static struct doca_flow_port *_create_doca_flow_port(int port_id) {
 
 	return port;
 }
+#elif CONFIG_BLUEFIELD3
+static doca_error_t create_doca_flow_port(int port_id,
+					  struct doca_dev *dev,
+					  enum doca_flow_port_operation_state state,
+					  struct doca_flow_port **port)
+{
+	int max_port_str_len = 128;
+	struct doca_flow_port_cfg *port_cfg;
+	char port_id_str[max_port_str_len];
+	doca_error_t result, tmp_result;
 
+	result = doca_flow_port_cfg_create(&port_cfg);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_port_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_port_cfg_set_dev(port_cfg, dev);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_port_cfg dev: %s\n", doca_error_get_descr(result));
+		goto destroy_port_cfg;
+	}
+
+	snprintf(port_id_str, max_port_str_len, "%d", port_id);
+	result = doca_flow_port_cfg_set_devargs(port_cfg, port_id_str);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_port_cfg devargs: %s\n", doca_error_get_descr(result));
+		goto destroy_port_cfg;
+	}
+
+	result = doca_flow_port_cfg_set_operation_state(port_cfg, state);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_port_cfg operation state: %s\n", doca_error_get_descr(result));
+		goto destroy_port_cfg;
+	}
+
+	result = doca_flow_port_start(port_cfg, port);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to start doca_flow port: %s\n", doca_error_get_descr(result));
+		goto destroy_port_cfg;
+	}
+
+destroy_port_cfg:
+	tmp_result = doca_flow_port_cfg_destroy(port_cfg);
+	if (tmp_result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to destroy doca_flow port: %s", doca_error_get_descr(tmp_result));
+		DOCA_ERROR_PROPAGATE(result, tmp_result);
+	}
+
+	return result;
+}
+#endif
+
+#ifdef CONFIG_BLUEFIELD2
 int init_doca_flow(int nb_queues, const char *mode, struct doca_flow_resources resource, uint32_t nr_shared_resources[]) {
 	struct doca_flow_cfg flow_cfg;
 	int shared_resource_idx;
@@ -170,17 +211,77 @@ int init_doca_flow(int nb_queues, const char *mode, struct doca_flow_resources r
 		flow_cfg.nr_shared_resources[shared_resource_idx] = nr_shared_resources[shared_resource_idx];
 	result = doca_flow_init(&flow_cfg);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		printf("Failed to init DOCA Flow: %s\n", doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		printf("Failed to init DOCA Flow: %s\n", doca_error_get_descr(result));
-#endif
 		return -1;
 	}
 
 	return 0;
 }
+#elif CONFIG_BLUEFIELD3
+#define SHARED_RESOURCE_NUM_VALUES (8) /* Number of doca_flow_shared_resource_type values */
+int init_doca_flow(int nb_queues, const char *mode, struct flow_resources *resource, uint32_t nr_shared_resources[])
+{
+	struct doca_flow_cfg *flow_cfg;
+	int shared_resource_idx;
+	doca_error_t result;
+	uint16_t qidx, rss_queues[nb_queues];
+	struct doca_flow_resource_rss_cfg rss = {0};
 
+	// memset(&flow_cfg, 0, sizeof(flow_cfg));
+
+	// flow_cfg.queues = nb_queues;
+	// flow_cfg.mode_args = mode;
+	// flow_cfg.resource = resource;
+	// for (shared_resource_idx = 0; shared_resource_idx < DOCA_FLOW_SHARED_RESOURCE_MAX; shared_resource_idx++)
+	// 	flow_cfg.nr_shared_resources[shared_resource_idx] = nr_shared_resources[shared_resource_idx];
+
+	result = doca_flow_cfg_create(&flow_cfg);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	rss.nr_queues = nb_queues;
+	for (qidx = 0; qidx < nb_queues; qidx++)
+		rss_queues[qidx] = qidx;
+	rss.queues_array = rss_queues;
+	result = doca_flow_cfg_set_default_rss(flow_cfg, &rss);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_cfg rss: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+
+	result = doca_flow_cfg_set_pipe_queues(flow_cfg, nb_queues);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_cfg pipe_queues: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+
+	result = doca_flow_cfg_set_mode_args(flow_cfg, mode);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_cfg mode_args: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+
+	for (int i = 0; i < SHARED_RESOURCE_NUM_VALUES; i++) {
+		result = doca_flow_cfg_set_nr_shared_resource(flow_cfg, nr_shared_resources[i], i);
+		if (result != DOCA_SUCCESS) {
+			printf("Failed to set doca_flow_cfg nr_shared_resources: %s\n", doca_error_get_descr(result));
+			return -1;
+		}
+	}
+
+	result = doca_flow_init(flow_cfg);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to initialize DOCA Flow: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_BLUEFIELD2
 int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_hairpin) {
 	int portid;
 
@@ -202,6 +303,34 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 	}
 	return 0;
 }
+#elif CONFIG_BLUEFIELD3
+int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_hairpin, struct doca_dev *dev_arr[]) {
+	int portid;
+
+	for (portid = 0; portid < nb_ports; portid++) {
+		state = states ? states[portid] : DOCA_FLOW_PORT_OPERATION_STATE_ACTIVE;
+		/* Create doca flow port */
+		result = create_doca_flow_port(portid, dev_arr[portid], state, &ports[portid]);
+		if (result != DOCA_SUCCESS) {
+			printf("Failed to start port: %s\n", doca_error_get_descr(result));
+			if (portid != 0)
+				stop_doca_flow_ports(portid, ports);
+			return result;
+		}
+		/* Pair ports should be done in the following order: port0 with port1, port2 with port3 etc */
+		if (!is_hairpin || !portid || !(portid % 2))
+			continue;
+		/* pair odd port with previous port */
+		result = doca_flow_port_pair(ports[portid], ports[portid ^ 1]);
+		if (result != DOCA_SUCCESS) {
+			printf("Failed to pair ports %u - %u\n", portid, portid ^ 1);
+			stop_doca_flow_ports(portid + 1, ports);
+			return result;
+		}
+	}
+	return DOCA_SUCCESS;
+}
+#endif
 
 int build_hairpin_pipe(uint16_t port_id) {
 #ifdef CONFIG_BLUEFIELD2
@@ -275,13 +404,13 @@ int build_hairpin_pipe(uint16_t port_id) {
 
 	result = doca_flow_pipe_cfg_set_type(pipe_cfg, DOCA_FLOW_PIPE_BASIC);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg type: %s", doca_error_get_descr(result));
+		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 
 	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg is_root: %s", doca_error_get_descr(result));
+		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 
@@ -378,17 +507,14 @@ int build_rss_pipe(uint16_t port_id) {
 }
 
 int doca_init(void) {
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_resources resource = {0};
 	uint32_t nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_MAX] = {0};
 	doca_error_t result;
 
     result = init_doca_flow(dpdk_config.port_config.nb_queues, "vnf,hws", resource, nr_shared_resources);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to init DOCA Flow: %s\n", doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		pr_err("Failed to init DOCA Flow: %s\n", doca_error_get_descr(result));
-#endif
 		return result;
 	}
 
@@ -396,16 +522,38 @@ int doca_init(void) {
 
 	result = init_doca_flow_ports(dpdk_config.port_config.nb_ports, ports, true);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		pr_err("Failed to init DOCA ports: %s\n", doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		pr_err("Failed to init DOCA ports: %s\n", doca_error_get_descr(result));
-#endif
 		doca_flow_destroy();
 		return result;
 	}
 
 	pr_info("DOCA flow ports init!\n");
+#elif CONFIG_BLUEFIELD3
+	int nb_ports = 2;
+	struct flow_resources resource = {0};
+	uint32_t nr_shared_resources[SHARED_RESOURCE_NUM_VALUES] = {0};
+	struct doca_flow_port *ports[nb_ports];
+	struct doca_dev *dev_arr[nb_ports];
+	struct doca_flow_pipe *pipe;
+	struct entries_status status;
+	int num_of_entries = 1;
+	doca_error_t result;
+	int port_id;
+
+	result = init_doca_flow(nb_queues, "vnf,hws", &resource, nr_shared_resources);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to init DOCA Flow: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	memset(dev_arr, 0, sizeof(struct doca_dev *) * nb_ports);
+	result = init_doca_flow_ports(nb_ports, ports, true, dev_arr);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to init DOCA ports: %s\n", doca_error_get_descr(result));
+		doca_flow_destroy();
+		return result;
+	}
+#endif
 
 	for (int port_id = 0; port_id < dpdk_config.port_config.nb_ports; port_id++) {
 		printf(ESC GREEN "[INFO]" RESET " Build hairpin pipe on port %d => ", port_id);
@@ -424,6 +572,7 @@ int doca_init(void) {
 		}
 		printf(ESC GREEN "[DONE]" RESET "\n");
 	}
+
     return 0;
 }
 
