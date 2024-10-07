@@ -445,12 +445,13 @@ int build_hairpin_pipe(uint16_t port_id) {
 	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		return result;
 	}
+
 	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTION_ARRAY);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		return result;
 	}
 
 	/* forwarding traffic to other port */
@@ -536,6 +537,7 @@ int build_rss_pipe(uint16_t port_id) {
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	struct entries_status *status;
 		uint16_t rss_queues[1];
+	int num_of_entries = 1;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
@@ -633,13 +635,8 @@ int doca_init(void) {
 	int nb_ports = 2;
 	struct flow_resources resource = {0};
 	uint32_t nr_shared_resources[SHARED_RESOURCE_NUM_VALUES] = {0};
-	struct doca_flow_port *ports[nb_ports];
 	struct doca_dev *dev_arr[nb_ports];
-	struct doca_flow_pipe *pipe;
-	struct entries_status status;
-	int num_of_entries = 1;
 	doca_error_t result;
-	int port_id;
 
 	result = init_doca_flow(dpdk_config.port_config.nb_queues, "vnf,hws", &resource, nr_shared_resources);
 	if (result != DOCA_SUCCESS) {
