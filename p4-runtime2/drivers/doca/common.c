@@ -331,6 +331,8 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 #elif CONFIG_BLUEFIELD3
 int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_hairpin, struct doca_dev *dev_arr[], enum doca_flow_port_operation_state *states) {
 	int portid;
+	doca_error_t result;
+	enum doca_flow_port_operation_state state;
 
 	for (portid = 0; portid < nb_ports; portid++) {
 		state = states ? states[portid] : DOCA_FLOW_PORT_OPERATION_STATE_ACTIVE;
@@ -347,10 +349,10 @@ int init_doca_flow_ports(int nb_ports, struct doca_flow_port *ports[], bool is_h
 		result = doca_flow_port_pair(ports[portid], ports[portid ^ 1]);
 		if (result != DOCA_SUCCESS) {
 			printf("Failed to pair ports %u - %u\n", portid, portid ^ 1);
-			return result;
+			return -1;
 		}
 	}
-	return DOCA_SUCCESS;
+	return 0;
 }
 #endif
 
@@ -389,7 +391,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 		return -1;
 	}
 
-	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &entry);
+	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, NULL);
 	if (result != DOCA_SUCCESS) {
 		free(status);
 		return -1;
@@ -404,15 +406,18 @@ int build_hairpin_pipe(uint16_t port_id) {
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
+	struct entries_status *status;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
 
+	status = (struct entries_status *)calloc(1, sizeof(struct entries_status));
+
 	actions_arr[0] = &actions;
 
-	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
+	result = doca_flow_pipe_cfg_create(&pipe_cfg,  ports[port_id]);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
 		return result;
@@ -451,7 +456,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 	fwd.type = DOCA_FLOW_FWD_PORT;
 	fwd.port_id = port_id ^ 1;
 
-	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, &hairpin_pipe[port_id]);
 	if (result != DOCA_SUCCESS) {
 		return -1;
 	}
@@ -528,12 +533,15 @@ int build_rss_pipe(uint16_t port_id) {
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
+	struct entries_status *status;
 		uint16_t rss_queues[1];
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
+
+	status = (struct entries_status *)calloc(1, sizeof(struct entries_status));
 
 	actions_arr[0] = &actions;
 
@@ -579,12 +587,12 @@ int build_rss_pipe(uint16_t port_id) {
 	fwd.rss_outer_flags = DOCA_FLOW_RSS_IPV4 | DOCA_FLOW_RSS_UDP;
 	fwd.num_of_queues = 1;
 
-	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, &rss_pipe[port_id]);
 	if (result != DOCA_SUCCESS) {
 		return -1;
 	}
 
-	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &entry);
+	result = doca_flow_pipe_add_entry(0, rss_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, NULL);
 	if (result != DOCA_SUCCESS) {
 		return -1;
 	}
