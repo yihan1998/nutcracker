@@ -54,6 +54,23 @@ ifeq ($(CONFIG_BLUEFIELD2),y)
 			CFLAGS	+= -DCONFIG_DOCA_FLOW
 		endif
 	endif
+else ifeq ($(CONFIG_BLUEFIELD3),y)
+	ifeq ($(CONFIG_DOCA),y)
+		LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-common)
+		LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-common)
+		CXXFLAGS_CLANG += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
+		CFLAGS_GCC += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
+		LDFLAGS += $(LIBDOCA_LDFLAGS)
+
+		ifeq ($(CONFIG_DOCA_COMPRESS),y)
+			LIBDOCA_CFLAGS := $(shell pkg-config --cflags doca-compress)
+			LIBDOCA_LDFLAGS := $(shell pkg-config --libs doca-compress)
+			CXXFLAGS_CLANG += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
+			CFLAGS_GCC += $(LIBDOCA_CFLAGS) -DDOCA_ALLOW_EXPERIMENTAL_API
+			LDFLAGS += $(LIBDOCA_LDFLAGS)
+			CFLAGS	+= -DCONFIG_DOCA_COMPRESS
+		endif
+	endif
 endif
 
 # Define source and object files
