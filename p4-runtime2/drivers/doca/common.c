@@ -9,6 +9,7 @@
 #include "drivers/doca/compress.h"
 
 #include <doca_flow.h>
+#include <doca_mmap.h>
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>
 
@@ -67,7 +68,11 @@ doca_error_t open_doca_device_with_pci(const char *pci_addr, jobs_check func, st
 			/* if device can be opened */
 			res = doca_dev_open(dev_list[i], retval);
 			if (res == DOCA_SUCCESS) {
+#if CONFIG_BLUEFIELD2
 				doca_devinfo_list_destroy(dev_list);
+#elif CONFIG_BLUEFIELD3
+				doca_devinfo_destroy_list(dev_list);
+#endif
 				return res;
 			}
 		}
