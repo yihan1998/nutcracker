@@ -335,8 +335,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			if (action->has_encap) {
             	doca_actions.encap_cfg.is_l2 = true;
             	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
-				memcpy(doca_actions.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
-				memcpy(doca_actions.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
 				doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 				doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
 				doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
@@ -445,6 +445,7 @@ int doca_create_hw_pipe(struct flow_pipe* pipe, struct flow_pipe_cfg* pipe_cfg, 
 }
 
 int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pipe, struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss) {
+#ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_pipe_cfg doca_cfg;
 	// struct doca_flow_fwd doca_fwd;
 	struct doca_flow_fwd doca_fwd_miss;
@@ -484,13 +485,97 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 
 	result = doca_flow_pipe_create(&doca_cfg, NULL, doca_fwd_miss_ptr, pipe);
 	if (result != DOCA_SUCCESS) {
-#ifdef CONFIG_BLUEFIELD2
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
-#elif CONFIG_BLUEFIELD3
-		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-#endif
 		return -1;
 	}
+#elif CONFIG_BLUEFIELD3
+    struct doca_flow_pipe_cfg *doca_cfg;
+	struct doca_flow_fwd doca_fwd_miss;
+	struct doca_flow_fwd *doca_fwd_miss_ptr = NULL;
+	doca_error_t result;
+
+	memset(&doca_cfg, 0, sizeof(doca_cfg));
+	// memset(&doca_fwd, 0, sizeof(doca_fwd));
+	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
+
+	// doca_cfg.attr.name = pipe_cfg->attr.name;
+	// doca_cfg.attr.type = DOCA_FLOW_PIPE_CONTROL;
+	// doca_cfg.attr.is_root = pipe_cfg->attr.is_root;
+	// doca_cfg.attr.domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
+	// doca_cfg.port = ports[port_id];
+
+    result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+    result = doca_flow_pipe_cfg_set_name(doca_cfg, pipe_cfg->attr.name);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_type(doca_cfg, DOCA_FLOW_PIPE_CONTROL);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_is_root(doca_cfg, pipe_cfg->attr.is_root);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+    enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
+
+	result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+    result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, 1);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	// /* Set fwd_miss */
+	if (fwd_miss) {
+		if (fwd_miss->type == FLOW_FWD_RSS) {
+			doca_fwd_miss.next_pipe = rss_pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd_miss->type == FLOW_FWD_HAIRPIN) {
+			doca_fwd_miss.next_pipe = hairpin_pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd_miss->type == FLOW_FWD_PORT) {
+			doca_fwd_miss.port_id = port_id;
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PORT;
+		} else if (fwd_miss->type == FLOW_FWD_PIPE) {
+			doca_fwd_miss.next_pipe = fwd_miss->next_pipe->hwPipe.pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else {
+			printf("Unknown fwd type! (%d)\n", fwd_miss->type);
+		}
+
+		doca_fwd_miss_ptr = &doca_fwd_miss;
+	}
+
+	result = doca_flow_pipe_create(&doca_cfg, NULL, doca_fwd_miss_ptr, pipe);
+	if (result != DOCA_SUCCESS) {
+		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+		return -1;
+	}
+
+#endif
 	return 0;
 }
 
