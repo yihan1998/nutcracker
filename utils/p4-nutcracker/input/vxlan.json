@@ -1,0 +1,500 @@
+{
+    "actions" : [
+      {
+        "name" : "NoAction",
+        "id" : 0,
+        "runtime_data" : [],
+        "primitives" : []
+      },
+      {
+        "name" : "MyIngress.encap",
+        "id" : 1,
+        "runtime_data" : [
+          {
+            "name" : "dst_mac",
+            "bitwidth" : 48
+          },
+          {
+            "name" : "src_mac",
+            "bitwidth" : 48
+          },
+          {
+            "name" : "vni",
+            "bitwidth" : 24
+          }
+        ],
+        "primitives" : [
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["vxlan_hdr", "flags"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0x40"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 88,
+              "column" : 8,
+              "source_fragment" : "h.vxlan_hdr.flags = 0x40"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["vxlan_hdr", "vni"]
+              },
+              {
+                "type" : "runtime_data",
+                "value" : 2
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 89,
+              "column" : 8,
+              "source_fragment" : "h.vxlan_hdr.vni = vni"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["vxlan_hdr", "reserved1"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0x000000"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 90,
+              "column" : 8,
+              "source_fragment" : "h.vxlan_hdr.reserved1 = 0"
+            }
+          }
+        ]
+      },
+      {
+        "name" : "MyIngress.set_mac",
+        "id" : 2,
+        "runtime_data" : [],
+        "primitives" : [
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "dst_addr"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0x123456789abc"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 94,
+              "column" : 8,
+              "source_fragment" : "h.eth_hdr.dst_addr = dst_mac"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "src_addr"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0xfedcba987654"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 95,
+              "column" : 8,
+              "source_fragment" : "h.eth_hdr.src_addr = src_mac"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "eth_type"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0x0800"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 96,
+              "column" : 8,
+              "source_fragment" : "h.eth_hdr.eth_type = 0x0800"
+            }
+          }
+        ]
+      },
+      {
+        "name" : "MyIngress.set_port",
+        "id" : 3,
+        "runtime_data" : [],
+        "primitives" : [
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["outer_tcp", "dst_port"]
+              },
+              {
+                "type" : "hexstr",
+                "value" : "0x1234"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 100,
+              "column" : 8,
+              "source_fragment" : "h.outer_tcp.dst_port = dst_port"
+            }
+          }
+        ]
+      },
+      {
+        "name" : "MyIngress.swap_mac",
+        "id" : 4,
+        "runtime_data" : [],
+        "primitives" : [
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["scalars", "temp_0"]
+              },
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "src_addr"]
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 105,
+              "column" : 8,
+              "source_fragment" : "temp = h.eth_hdr.src_addr"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "src_addr"]
+              },
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "dst_addr"]
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 106,
+              "column" : 8,
+              "source_fragment" : "h.eth_hdr.src_addr = h.eth_hdr.dst_addr"
+            }
+          },
+          {
+            "op" : "assign",
+            "parameters" : [
+              {
+                "type" : "field",
+                "value" : ["eth_hdr", "dst_addr"]
+              },
+              {
+                "type" : "field",
+                "value" : ["scalars", "temp_0"]
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 107,
+              "column" : 8,
+              "source_fragment" : "h.eth_hdr.dst_addr = temp"
+            }
+          }
+        ]
+      },
+      {
+        "name" : "MyIngress.drop",
+        "id" : 5,
+        "runtime_data" : [],
+        "primitives" : [
+          {
+            "op" : "mark_to_drop",
+            "parameters" : [
+              {
+                "type" : "header",
+                "value" : "standard_metadata"
+              }
+            ],
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 111,
+              "column" : 8,
+              "source_fragment" : "mark_to_drop(sm)"
+            }
+          }
+        ]
+      },
+      {
+        "name" : "MyIngress.rss",
+        "id" : 6,
+        "runtime_data" : [],
+        "primitives" : []
+      }
+    ],
+    "pipelines" : [
+      {
+        "name" : "ingress",
+        "id" : 0,
+        "source_info" : {
+          "filename" : "vxlan.p4",
+          "line" : 81,
+          "column" : 8,
+          "source_fragment" : "MyIngress"
+        },
+        "init_table" : "node_2",
+        "tables" : [
+          {
+            "name" : "MyIngress.vxlan_tbl",
+            "id" : 0,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 119,
+              "column" : 10,
+              "source_fragment" : "vxlan_tbl"
+            },
+            "key" : [
+              {
+                "match_type" : "exact",
+                "name" : "h.outer_ipv4.src_addr",
+                "target" : ["outer_ipv4", "src_addr"],
+                "mask" : null
+              }
+            ],
+            "match_type" : "exact",
+            "type" : "simple",
+            "max_size" : 1024,
+            "with_counters" : false,
+            "support_timeout" : false,
+            "direct_meters" : null,
+            "action_ids" : [1, 0],
+            "actions" : ["MyIngress.encap", "NoAction"],
+            "base_default_next" : "tbl_set_mac",
+            "next_tables" : {
+              "MyIngress.encap" : "tbl_set_mac",
+              "NoAction" : "tbl_set_mac"
+            },
+            "default_entry" : {
+              "action_id" : 0,
+              "action_const" : true,
+              "action_data" : [],
+              "action_entry_const" : true
+            }
+          },
+          {
+            "name" : "tbl_set_mac",
+            "id" : 1,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 147,
+              "column" : 12,
+              "source_fragment" : "set_mac(0x123456789ABC, 0xFEDCBA987654)"
+            },
+            "key" : [],
+            "match_type" : "exact",
+            "type" : "simple",
+            "max_size" : 1024,
+            "with_counters" : false,
+            "support_timeout" : false,
+            "direct_meters" : null,
+            "action_ids" : [2],
+            "actions" : ["MyIngress.set_mac"],
+            "base_default_next" : null,
+            "next_tables" : {
+              "MyIngress.set_mac" : null
+            },
+            "default_entry" : {
+              "action_id" : 2,
+              "action_const" : true,
+              "action_data" : [],
+              "action_entry_const" : true
+            }
+          },
+          {
+            "name" : "MyIngress.tcp_tbl",
+            "id" : 2,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 132,
+              "column" : 10,
+              "source_fragment" : "tcp_tbl"
+            },
+            "key" : [
+              {
+                "match_type" : "exact",
+                "name" : "h.outer_tcp.dst_port",
+                "target" : ["outer_tcp", "dst_port"],
+                "mask" : null
+              }
+            ],
+            "match_type" : "exact",
+            "type" : "simple",
+            "max_size" : 1024,
+            "with_counters" : false,
+            "support_timeout" : false,
+            "direct_meters" : null,
+            "action_ids" : [4, 5],
+            "actions" : ["MyIngress.swap_mac", "MyIngress.drop"],
+            "base_default_next" : "tbl_set_port",
+            "next_tables" : {
+              "MyIngress.swap_mac" : "tbl_set_port",
+              "MyIngress.drop" : "tbl_set_port"
+            },
+            "default_entry" : {
+              "action_id" : 5,
+              "action_const" : true,
+              "action_data" : [],
+              "action_entry_const" : true
+            }
+          },
+          {
+            "name" : "tbl_set_port",
+            "id" : 3,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 151,
+              "column" : 12,
+              "source_fragment" : "set_port(0x1234)"
+            },
+            "key" : [],
+            "match_type" : "exact",
+            "type" : "simple",
+            "max_size" : 1024,
+            "with_counters" : false,
+            "support_timeout" : false,
+            "direct_meters" : null,
+            "action_ids" : [3],
+            "actions" : ["MyIngress.set_port"],
+            "base_default_next" : null,
+            "next_tables" : {
+              "MyIngress.set_port" : null
+            },
+            "default_entry" : {
+              "action_id" : 3,
+              "action_const" : true,
+              "action_data" : [],
+              "action_entry_const" : true
+            }
+          },
+          {
+            "name" : "tbl_rss",
+            "id" : 4,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 153,
+              "column" : 12,
+              "source_fragment" : "rss()"
+            },
+            "key" : [],
+            "match_type" : "exact",
+            "type" : "simple",
+            "max_size" : 1024,
+            "with_counters" : false,
+            "support_timeout" : false,
+            "direct_meters" : null,
+            "action_ids" : [6],
+            "actions" : ["MyIngress.rss"],
+            "base_default_next" : null,
+            "next_tables" : {
+              "MyIngress.rss" : null
+            },
+            "default_entry" : {
+              "action_id" : 6,
+              "action_const" : true,
+              "action_data" : [],
+              "action_entry_const" : true
+            }
+          }
+        ],
+        "action_profiles" : [],
+        "conditionals" : [
+          {
+            "name" : "node_2",
+            "id" : 0,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 145,
+              "column" : 12,
+              "source_fragment" : "h.outer_udp.dst_port == 0x1234"
+            },
+            "expression" : {
+              "type" : "expression",
+              "value" : {
+                "op" : "==",
+                "left" : {
+                  "type" : "field",
+                  "value" : ["outer_udp", "dst_port"]
+                },
+                "right" : {
+                  "type" : "hexstr",
+                  "value" : "0x1234"
+                }
+              }
+            },
+            "true_next" : "MyIngress.vxlan_tbl",
+            "false_next" : "node_5"
+          },
+          {
+            "name" : "node_5",
+            "id" : 1,
+            "source_info" : {
+              "filename" : "vxlan.p4",
+              "line" : 149,
+              "column" : 19,
+              "source_fragment" : "h.outer_tcp.isValid()"
+            },
+            "expression" : {
+              "type" : "expression",
+              "value" : {
+                "op" : "==",
+                "left" : {
+                  "type" : "field",
+                  "value" : ["outer_tcp", "dst_port"]
+                },
+                "right" : {
+                  "type" : "hexstr",
+                  "value" : "0x1234"
+                }
+              }
+            },
+            "true_next" : "MyIngress.tcp_tbl",
+            "false_next" : "tbl_rss"
+          }
+        ]
+      }
+    ]
+  }

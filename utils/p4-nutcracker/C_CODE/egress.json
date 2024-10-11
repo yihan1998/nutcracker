@@ -1,0 +1,36 @@
+{
+    "name": "egress",
+    "pipes": [
+        {
+            "fsm_enable": true,
+            "fsm_ops": {
+                "run": "run_egress_encap_3_fsm_pipe",
+                "add_pipe_entry": "add_egress_encap_3_fsm_pipe_entry",
+                "create_pipe": "create_egress_encap_3_fsm_pipe"
+            },
+            "name": "egress_encap_3"
+        },
+        {
+            "fsm_enable": true,
+            "fsm_ops": {
+                "create_pipe": "create_egress_fwd_port_4_fsm_pipe"
+            },
+            "name": "egress_fwd_port_4"
+        },
+        {
+            "actions": [
+                {
+                    "id": 3,
+                    "name": "egress.encap"
+                }
+            ],
+            "fsm_enable": true,
+            "fsm_ops": {
+                "add_pipe_entry": "add_egress_vxlan_encap_tbl_2_fsm_pipe_entry",
+                "create_pipe": "create_egress_vxlan_encap_tbl_2_fsm_pipe"
+            },
+            "name": "egress_vxlan_encap_tbl_2"
+        }
+    ],
+    "source_code": "/home/ubuntu/Nutcracker/utils/p4-nutcracker/C_CODE/egress.bc"
+}

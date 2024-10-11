@@ -1,0 +1,67 @@
+{
+    "name": "ingress",
+    "pipes": [
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_ingress_hairpin_2_hw_pipe"
+            },
+            "name": "ingress_hairpin_2"
+        },
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_ingress_rss_0_hw_pipe"
+            },
+            "name": "ingress_rss_0"
+        },
+        {
+            "actions": [
+                {
+                    "id": 2,
+                    "name": "ingress.hairpin"
+                },
+                {
+                    "id": 0,
+                    "name": "ingress.rss"
+                }
+            ],
+            "hw_enable": true,
+            "hw_ops": {
+                "add_pipe_entry": "add_ingress_udp_tbl_0_hw_pipe_entry",
+                "create_pipe": "create_ingress_udp_tbl_0_hw_pipe"
+            },
+            "name": "ingress_udp_tbl_0"
+        },
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_ingress_rss_1_hw_pipe"
+            },
+            "name": "ingress_rss_1"
+        },
+        {
+            "actions": [
+                {
+                    "id": 1,
+                    "name": "ingress.rss"
+                }
+            ],
+            "hw_enable": true,
+            "hw_ops": {
+                "add_pipe_entry": "add_tbl_rss_1_hw_pipe_entry",
+                "create_pipe": "create_tbl_rss_1_hw_pipe"
+            },
+            "name": "tbl_rss_1"
+        },
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_node_2_0_hw_pipe",
+                "init_pipe": "init_node_2_0_hw_pipe"
+            },
+            "name": "node_2_0"
+        }
+    ],
+    "source_code": "/home/ubuntu/Nutcracker/utils/p4-nutcracker/build/../out/ingress.bc"
+}
