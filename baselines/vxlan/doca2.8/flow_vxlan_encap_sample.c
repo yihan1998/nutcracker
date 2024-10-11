@@ -31,6 +31,8 @@
 
 #include "flow_common.h"
 
+#define ENABLE_COUNTER
+
 DOCA_LOG_REGISTER(FLOW_VXLAN_ENCAP);
 
 /*
@@ -300,7 +302,7 @@ static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 	uint8_t encap_ttl = 17;
 	doca_be32_t encap_vxlan_tun_id = BUILD_VNI(0xadadad);
 	uint8_t src_mac[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-	uint8_t dst_mac[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+	uint8_t dst_mac[] = {0x94, 0x6d, 0xae, 0xe6, 0x90, 0x32};
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
