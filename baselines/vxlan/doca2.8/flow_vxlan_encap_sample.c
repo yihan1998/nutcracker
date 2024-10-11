@@ -221,13 +221,13 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 
-	match.outer.ip4.dst_ip = dst_ip_addr;
-	match.outer.ip4.src_ip = src_ip_addr;
-	match.outer.transport.dst_port = dst_port;
-	match.outer.transport.src_port = src_port;
+	// match.outer.ip4.dst_ip = dst_ip_addr;
+	// match.outer.ip4.src_ip = src_ip_addr;
+	// match.outer.transport.dst_port = dst_port;
+	// match.outer.transport.src_port = src_port;
 
 	actions.meta.pkt_meta = 1;
-	actions.outer.transport.src_port = rte_cpu_to_be_16(1235);
+	// actions.outer.transport.src_port = rte_cpu_to_be_16(1235);
 	actions.action_idx = 0;
 
 	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, &entry);
