@@ -440,9 +440,9 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 	}
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
-	struct doca_flow_resource_query stats;
 	while(1) {
 		// sleep(1);
+		// struct doca_flow_resource_query stats;
 		// for (int port_id = 0; port_id < nb_ports; port_id++) {
 		// 	result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
 		// 	if (result != DOCA_SUCCESS) {
