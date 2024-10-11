@@ -100,10 +100,8 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	}
 
 	/* forwarding traffic to other port */
-	// fwd.type = DOCA_FLOW_FWD_PORT;
-	// fwd.port_id = port_id ^ 1;
-
-	fwd.type = DOCA_FLOW_FWD_DROP;
+	fwd.type = DOCA_FLOW_FWD_PORT;
+	fwd.port_id = port_id ^ 1;
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
 destroy_pipe_cfg:
@@ -401,7 +399,7 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 			return result;
 		}
 
-		result = add_vxlan_encap_pipe_entry(pipe, vxlan_type, &status_egress, &encap_entry[port_id]);
+		result = add_vxlan_encap_pipe_entry(pipe, vxlan_type, &status_egress, &encap_entry[port_id ^ 1]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to add entry to vxlan encap pipe: %s", doca_error_get_descr(result));
 			stop_doca_flow_ports(nb_ports, ports);
