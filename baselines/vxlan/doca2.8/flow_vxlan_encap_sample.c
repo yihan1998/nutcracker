@@ -46,14 +46,18 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
-	// struct doca_flow_monitor counter;
+#ifdef ENABLE_COUNTER
+	struct doca_flow_monitor counter;
+#endif	/* ENABLE_COUNTER */
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
-	// memset(&counter, 0, sizeof(counter));
+#ifdef ENABLE_COUNTER
+	memset(&counter, 0, sizeof(counter));
+#endif	/* ENABLE_COUNTER */
 
 	/* 5 tuple match */
 	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
@@ -70,7 +74,9 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	actions.outer.transport.src_port = 0xffff;
 	actions_arr[0] = &actions;
 
-	// counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+#ifdef ENABLE_COUNTER
+	counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+#endif	/* ENABLE_COUNTER */
 
 	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
 	if (result != DOCA_SUCCESS) {
@@ -93,11 +99,13 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg monitor: %s", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
-	// result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
-	// if (result != DOCA_SUCCESS) {
-	// 	DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
-	// 	goto destroy_pipe_cfg;
-	// }
+#ifdef ENABLE_COUNTER
+	result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+#endif	/* ENABLE_COUNTER */
 
 	/* forwarding traffic to other port */
 	fwd.type = DOCA_FLOW_FWD_PORT;
@@ -127,7 +135,9 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	struct doca_flow_match match_mask;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
-	// struct doca_flow_monitor counter;
+#ifdef ENABLE_COUNTER
+	struct doca_flow_monitor counter;
+#endif	/* ENABLE_COUNTER */
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
 
@@ -135,7 +145,9 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	memset(&match_mask, 0, sizeof(match_mask));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
-	// memset(&counter, 0, sizeof(counter));
+#ifdef ENABLE_COUNTER
+	memset(&counter, 0, sizeof(counter));
+#endif	/* ENABLE_COUNTER */
 
 	/* match on pkt meta */
 	match_mask.meta.pkt_meta = UINT32_MAX;
@@ -156,7 +168,9 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
 	actions_arr[0] = &actions;
 
-	// counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+#ifdef ENABLE_COUNTER
+	counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+#endif	/* ENABLE_COUNTER */
 
 	switch (vxlan_type) {
 	case DOCA_FLOW_TUN_EXT_VXLAN_GBP:
@@ -201,11 +215,13 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg actions: %s", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
-	// result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
-	// if (result != DOCA_SUCCESS) {
-	// 	DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
-	// 	goto destroy_pipe_cfg;
-	// }
+#ifdef ENABLE_COUNTER
+	result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+#endif	/* ENABLE_COUNTER */
 
 	/* forwarding traffic to the wire */
 	fwd.type = DOCA_FLOW_FWD_PORT;
@@ -441,25 +457,27 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
 	while(1) {
-		// sleep(1);
-		// struct doca_flow_resource_query stats;
-		// for (int port_id = 0; port_id < nb_ports; port_id++) {
-		// 	result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
-		// 	if (result != DOCA_SUCCESS) {
-		// 		DOCA_LOG_ERR("Port %d failed to query match pipe entry: %s",
-		// 						port_id, doca_error_get_descr(result));
-		// 		return result;
-		// 	}
-		// 	DOCA_LOG_INFO("Port %d, match pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+#ifdef ENABLE_COUNTER
+		sleep(1);
+		struct doca_flow_resource_query stats;
+		for (int port_id = 0; port_id < nb_ports; port_id++) {
+			result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Port %d failed to query match pipe entry: %s",
+								port_id, doca_error_get_descr(result));
+				return result;
+			}
+			DOCA_LOG_INFO("Port %d, match pipe entry received %lu packets", port_id, stats.counter.total_pkts);
 
-		// 	result = doca_flow_resource_query_entry(encap_entry[port_id], &stats);
-		// 	if (result != DOCA_SUCCESS) {
-		// 		DOCA_LOG_ERR("Port %d failed to query encap pipe entry: %s",
-		// 						port_id, doca_error_get_descr(result));
-		// 		return result;
-		// 	}
-		// 	DOCA_LOG_INFO("Port %d, encap pipe entry received %lu packets", port_id, stats.counter.total_pkts);
-		// }
+			result = doca_flow_resource_query_entry(encap_entry[port_id], &stats);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Port %d failed to query encap pipe entry: %s",
+								port_id, doca_error_get_descr(result));
+				return result;
+			}
+			DOCA_LOG_INFO("Port %d, encap pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+		}
+#endif	/* ENABLE_COUNTER */
 	}
 
 	result = stop_doca_flow_ports(nb_ports, ports);
