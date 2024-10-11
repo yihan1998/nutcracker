@@ -31,7 +31,7 @@
 
 #include "flow_common.h"
 
-#define ENABLE_COUNTER
+// #define ENABLE_COUNTER
 
 DOCA_LOG_REGISTER(FLOW_VXLAN_ENCAP);
 
