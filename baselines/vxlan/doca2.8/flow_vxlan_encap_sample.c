@@ -127,6 +127,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	struct doca_flow_match match_mask;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
+	struct doca_flow_monitor counter;
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
 
@@ -134,6 +135,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	memset(&match_mask, 0, sizeof(match_mask));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
+	memset(&counter, 0, sizeof(counter));
 
 	/* match on pkt meta */
 	match_mask.meta.pkt_meta = UINT32_MAX;
@@ -153,6 +155,8 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
 	actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
 	actions_arr[0] = &actions;
+
+	counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
 	switch (vxlan_type) {
 	case DOCA_FLOW_TUN_EXT_VXLAN_GBP:
@@ -195,6 +199,11 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port,
 	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg actions: %s", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
 
