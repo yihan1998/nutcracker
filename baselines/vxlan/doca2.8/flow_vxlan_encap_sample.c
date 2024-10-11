@@ -46,12 +46,14 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
+	struct doca_flow_monitor counter;
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
+	memset(&counter, 0, sizeof(counter));
 
 	/* 5 tuple match */
 	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
@@ -67,6 +69,8 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	actions.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TRANSPORT;
 	actions.outer.transport.src_port = 0xffff;
 	actions_arr[0] = &actions;
+
+	counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
 	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
 	if (result != DOCA_SUCCESS) {
@@ -87,6 +91,11 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg monitor: %s", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &counter);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg counter: %s", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
 
