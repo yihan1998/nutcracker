@@ -44,7 +44,6 @@
 #include <dpdk_utils.h>
 #include <utils.h>
 
-#include "vxlan_fwd_ft.h"
 #include "vxlan_fwd_port.h"
 #include "vxlan_fwd_vnf_core.h"
 
