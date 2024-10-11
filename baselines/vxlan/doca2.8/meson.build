@@ -27,6 +27,7 @@ add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
 sample_dependencies = []
 # Required for all DOCA programs
 sample_dependencies += dependency('doca-common')
+sample_dependencies += dependency('doca-flow')
 # 3rd Party dependencies
 sample_dependencies += dependency('libdpdk')
 
