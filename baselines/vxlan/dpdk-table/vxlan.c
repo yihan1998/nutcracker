@@ -209,7 +209,6 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct iphdr *orig_iphdr, *new_iphdr;
     struct udphdr *orig_udphdr, *new_udphdr;
     struct vxlanhdr *vxlanhdr;
-    unsigned char tmp;
 
     orig_ethhdr = (struct ethhdr *)pkt;
     orig_iphdr = (struct iphdr *)&orig_ethhdr[1];
@@ -219,7 +218,7 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
         return -1;
     }
 
-    uint8_t *new_pkt = rte_pktmbuf_prepend(m, sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(struct vxlanhdr));
+    uint8_t *new_pkt = (uint8_t *)rte_pktmbuf_prepend(m, sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(struct vxlanhdr));
     if (new_pkt == NULL) {
         return -1;
     }
@@ -256,6 +255,8 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     vxlanhdr->vni_reserved2 = htonl(0x123456 << 8); // Example VNI
 
     // print_ether_hdr(new_ethhdr);
+
+    return 0;
 }
 
 int check_match_action_table(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
