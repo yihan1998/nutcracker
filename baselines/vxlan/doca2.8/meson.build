@@ -19,7 +19,7 @@ project('DOCA_SAMPLE', 'C', 'CPP',
 	meson_version: '>= 0.61.2'
 )
 
-SAMPLE_NAME = 'vxlan_fwd'
+SAMPLE_NAME = 'flow_vxlan_encap'
 
 # Comment this line to restore warnings of experimental DOCA features
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
@@ -35,9 +35,9 @@ sample_dependencies += dependency('libdpdk')
 sample_srcs = [
 	SAMPLE_NAME + '_main.c',
 	SAMPLE_NAME + '_sample.c',
+	'flow_common.c',
 	'common/utils.c',
 	'common/dpdk_utils.c',
-	'common/offload_rules.c',
 ]
 
 sample_inc_dirs  = []
