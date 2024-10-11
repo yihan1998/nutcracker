@@ -33,11 +33,8 @@ sample_dependencies += dependency('doca-argp')
 sample_dependencies += dependency('libdpdk')
 
 sample_srcs = [
-	SAMPLE_NAME + '.c',
-	SAMPLE_NAME + '_vnf.c',
-	SAMPLE_NAME + '_pkt.c',
-	SAMPLE_NAME + '_port.c',
-	SAMPLE_NAME + '_vnf_core.c',
+	SAMPLE_NAME + '_main.c',
+	SAMPLE_NAME + '_sample.c',
 	'common/utils.c',
 	'common/dpdk_utils.c',
 	'common/offload_rules.c',
