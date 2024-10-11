@@ -12,7 +12,6 @@ struct vxlan_fwd_config {
 	uint16_t hw_offload;				/* Whether or not HW steering is used */
 	uint64_t stats_timer;				/* The time between periodic stats prints */
 	bool is_hairpin;				/* Number of hairpin queues */
-	bool age_thread;				/* Whther or not to use a dedicated thread to handle aged flows */
 };
 
 /* Simple FWD VNF parameters to be passed when starting processing packets */

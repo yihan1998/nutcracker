@@ -52,7 +52,6 @@ main(int argc, char **argv)
 		.rx_only = 0,
 		.hw_offload = 0,
 		.stats_timer = 100000,
-		.age_thread = false,
 		.is_hairpin = false,
 	};
 	struct app_vnf *vnf;
@@ -110,7 +109,6 @@ main(int argc, char **argv)
 	port_cfg.is_hairpin = app_cfg.is_hairpin;
 	port_cfg.nb_meters = DEFAULT_NB_METERS;
 	port_cfg.nb_counters = (1 << 13);
-	port_cfg.age_thread = app_cfg.age_thread;
 	if (vnf->vnf_init(&port_cfg) != 0) {
 		DOCA_LOG_ERR("VNF application init error");
 		exit_status = EXIT_FAILURE;

@@ -48,9 +48,6 @@ struct vxlan_fwd_ft_cfg {
 struct vxlan_fwd_ft {
 	struct vxlan_fwd_ft_cfg cfg;						/* Flow table configurations */
 	struct vxlan_fwd_ft_stats stats;					/* Stats for the flow table */
-	bool has_age_thread;							/* Whether or not a dedicated thread is used */
-	pthread_t age_thread;							/* Thread entity for aging, in case "aging thread" is used */
-	volatile int stop_aging_thread;						/* Flag for stopping the agiing thread */
 	uint32_t fid_ctr;							/* Flow table ID , used for controlling the flow table */
 	void (*vxlan_fwd_aging_cb)(struct vxlan_fwd_ft_user_ctx *ctx);	/* Callback holder; callback for handling aged flows */
 	void (*vxlan_fwd_aging_hw_cb)(void);					/* HW callback holder; callback for handling aged flows*/
@@ -152,60 +149,6 @@ vxlan_fwd_ft_aging_ft_entry(struct vxlan_fwd_ft *ft,
 }
 
 /*
- * Main function for aging handler
- *
- * @void_ptr [in]: the flow table to start the aging for
- * @return: Next flow table to handle the aging for, NULL value otherwise
- */
-static void*
-vxlan_fwd_ft_aging_main(void *void_ptr)
-{
-	struct vxlan_fwd_ft *ft = (struct vxlan_fwd_ft *)void_ptr;
-	bool next = false;
-	unsigned int i;
-
-	if (!ft) {
-		DOCA_LOG_ERR("No ft, abort aging");
-		return NULL;
-	}
-	while (!ft->stop_aging_thread) {
-		if ((int)(ft->stats.add - ft->stats.rm) == 0)
-			continue;
-		DOCA_LOG_DBG("Total entries: %d",
-			(int)(ft->stats.add - ft->stats.rm));
-		DOCA_LOG_DBG("Total adds   : %d", (int)(ft->stats.add));
-		for (i = 0; i < ft->cfg.size; i++) {
-			do {
-				next = vxlan_fwd_ft_aging_ft_entry(ft, i);
-			} while (next);
-		}
-		sleep(1);
-	}
-	return NULL;
-}
-
-/*
- * Start per flow table aging thread
- *
- * @ft [in]: the flow table to start the aging thread for
- * @thread_id [in]: the dedicated thread identifier for aging handling of the provided flow table
- * @return: 0 on success and negative value otherwise
- */
-static int
-vxlan_fwd_ft_aging_thread_start(struct vxlan_fwd_ft *ft, pthread_t *thread_id)
-{
-	int ret;
-
-	/* create a second thread which executes inc_x(&x) */
-	ret = pthread_create(thread_id, NULL, vxlan_fwd_ft_aging_main, ft);
-	if (ret) {
-		fprintf(stderr, "Error creating thread ret:%d\n", ret);
-		return -1;
-	}
-	return 0;
-}
-
-/*
  * Build table key according to parsed packet.
  *
  * @pinfo [in]: the packet's info
@@ -265,7 +208,7 @@ vxlan_fwd_ft_key_equal(struct vxlan_fwd_ft_key *key1,
 struct vxlan_fwd_ft *
 vxlan_fwd_ft_create(int nb_flows, uint32_t user_data_size,
 	       void (*vxlan_fwd_aging_cb)(struct vxlan_fwd_ft_user_ctx *ctx),
-	       void (*vxlan_fwd_aging_hw_cb)(void), bool age_thread)
+	       void (*vxlan_fwd_aging_hw_cb)(void))
 {
 	struct vxlan_fwd_ft *ft;
 	uint32_t nb_flows_aligned;
@@ -302,11 +245,6 @@ vxlan_fwd_ft_create(int nb_flows, uint32_t user_data_size,
 		     user_data_size);
 	for (i = 0; i < ft->cfg.size; i++)
 		rte_spinlock_init(&ft->buckets[i].lock);
-	if (age_thread && vxlan_fwd_ft_aging_thread_start(ft, &ft->age_thread) < 0) {
-		free(ft);
-		return NULL;
-	}
-	ft->has_age_thread = age_thread;
 	return ft;
 }
 
@@ -416,10 +354,6 @@ vxlan_fwd_ft_destroy(struct vxlan_fwd_ft *ft)
 
 	if (ft == NULL)
 		return DOCA_ERROR_INVALID_VALUE;
-	if (ft->has_age_thread) {
-		ft->stop_aging_thread = true;
-		pthread_join(ft->age_thread, NULL);
-	}
 	for (i = 0; i < ft->cfg.size; i++) {
 		node = LIST_FIRST(&ft->buckets[i].head);
 		while (node != NULL) {
