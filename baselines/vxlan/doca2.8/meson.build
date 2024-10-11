@@ -28,6 +28,7 @@ sample_dependencies = []
 # Required for all DOCA programs
 sample_dependencies += dependency('doca-common')
 sample_dependencies += dependency('doca-flow')
+sample_dependencies += dependency('doca-argp')
 # 3rd Party dependencies
 sample_dependencies += dependency('libdpdk')
 
