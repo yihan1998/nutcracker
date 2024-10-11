@@ -235,7 +235,7 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe,
 	// struct doca_flow_pipe_entry *entry;
 	doca_error_t result;
 
-	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(10, 10, 0, 1);
+	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(10, 10, 10, 10);
 	// doca_be32_t src_ip_addr = BE_IPV4_ADDR(1, 2, 3, 4);
 	// doca_be16_t dst_port = rte_cpu_to_be_16(80);
 	// doca_be16_t src_port = rte_cpu_to_be_16(1234);
@@ -450,8 +450,7 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 				return result;
 			}
 			DOCA_LOG_INFO("Port %d, match pipe entry received %lu packets", port_id, stats.counter.total_pkts);
-		}
-		for (int port_id = 0; port_id < nb_ports; port_id++) {
+
 			result = doca_flow_resource_query_entry(encap_entry[port_id], &stats);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Port %d failed to query encap pipe entry: %s",
