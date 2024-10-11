@@ -254,7 +254,7 @@ struct doca_flow_pipe_entry *encap_entry[2];
 static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 					       enum doca_flow_tun_ext_vxlan_type vxlan_type,
 					       struct entries_status *status, 
-						   struct doca_flow_pipe_entry *entry)
+						   struct doca_flow_pipe_entry **entry)
 {
 	struct doca_flow_match match;
 	struct doca_flow_actions actions;
@@ -310,7 +310,7 @@ static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 
-	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, &encap_entry[port]);
+	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, entry);
 	if (result != DOCA_SUCCESS)
 		return result;
 
