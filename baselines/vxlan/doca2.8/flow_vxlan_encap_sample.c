@@ -433,14 +433,23 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 	struct doca_flow_resource_query stats;
 	while(1) {
 		sleep(1);
-		for (port_id = 0; port_id < nb_ports; port_id++) {
+		for (int port_id = 0; port_id < nb_ports; port_id++) {
 			result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
 			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Port %d failed to query main pipe entry: %s",
+				DOCA_LOG_ERR("Port %d failed to query match pipe entry: %s",
 								port_id, doca_error_get_descr(result));
 				return result;
 			}
-			DOCA_LOG_INFO("Port %d, main pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+			DOCA_LOG_INFO("Port %d, match pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+		}
+		for (int port_id = 0; port_id < nb_ports; port_id++) {
+			result = doca_flow_resource_query_entry(encap_entry[port_id], &stats);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Port %d failed to query encap pipe entry: %s",
+								port_id, doca_error_get_descr(result));
+				return result;
+			}
+			DOCA_LOG_INFO("Port %d, encap pipe entry received %lu packets", port_id, stats.counter.total_pkts);
 		}
 	}
 
