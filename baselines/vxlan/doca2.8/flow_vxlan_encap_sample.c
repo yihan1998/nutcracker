@@ -361,8 +361,11 @@ static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan_type)
 {
 	int nb_ports = 2;
-	// struct flow_resources resource = {.nr_counters = 64};
+#ifdef ENABLE_COUNTER
+	struct flow_resources resource = {.nr_counters = 64};
+#else
 	struct flow_resources resource = {0};
+#endif	/* ENABLE_COUNTER */
 	uint32_t nr_shared_resources[SHARED_RESOURCE_NUM_VALUES] = {0};
 	struct doca_flow_port *ports[nb_ports];
 	struct doca_dev *dev_arr[nb_ports];
