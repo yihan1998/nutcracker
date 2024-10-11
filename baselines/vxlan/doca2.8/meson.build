@@ -35,7 +35,6 @@ sample_dependencies += dependency('libdpdk')
 sample_srcs = [
 	SAMPLE_NAME + '.c',
 	SAMPLE_NAME + '_vnf.c',
-	SAMPLE_NAME + '_ft.c',
 	SAMPLE_NAME + '_pkt.c',
 	SAMPLE_NAME + '_port.c',
 	SAMPLE_NAME + '_vnf_core.c',
