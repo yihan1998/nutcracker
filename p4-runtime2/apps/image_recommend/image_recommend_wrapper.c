@@ -96,7 +96,6 @@ int image_recommand(uint8_t * data, int len)
             uint64_t total_compression_time = PyLong_AsUnsignedLongLong(pTotalCompressionTime);
             uint64_t total_time = PyLong_AsUnsignedLongLong(pTotalTime);
 
-            // // Use these values as needed in your C code
             // printf("Preprocess time: %llu ns\n", (unsigned long long)preprocess_time);
             // printf("Predict time: %llu ns\n", (unsigned long long)predict_time);
             // printf("Recommendation time: %llu ns\n", (unsigned long long)recommendation_time);

@@ -27,6 +27,12 @@ struct rte_mempool * task_mp;
 struct lcore_context lcore_ctxs[NR_CPUS];
 DEFINE_PER_CPU(struct lcore_context *, lcore_ctx);
 
+uint64_t get_current_time_ns(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (uint64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+}
+
 int __init worker_init(void) {
     worker_rq = rte_ring_create("worker_rq", 4096, rte_socket_id(), 0);
     assert(worker_rq != NULL);

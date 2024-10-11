@@ -8,6 +8,8 @@
 #include <csignal>
 
 #include "utils/netStat.h"
+#include "utils/commandParser.h"
+#include "utils/jit.h"
 #include "syscall.h"
 #include "net/dpdk.h"
 #include "net/net.h"
@@ -17,7 +19,6 @@
 #include "kernel/sched.h"
 #include "kernel/threads.h"
 #include "utils/printk.h"
-// #include "jit.h"
 #ifdef CONFIG_DOCA
 #include "drivers/doca/common.h"
 #include "drivers/doca/context.h"
@@ -25,13 +26,16 @@
 // #include "jit.h"
 // #include "shell.h"
 
+#include "backend/flowPipeInternal.h"
+
 #undef CR1
 #undef CR2
 
+#define BE_IPV4_ADDR(a, b, c, d) \
+	(RTE_BE32(((uint32_t)a<<24) + (b<<16) + (c<<8) + d))
+
 bool kernel_early_boot = true;
 bool kernel_shutdown = false;
-
-// #include "commandParser.h"
 
 struct lcore_arg {
 	// enum Role role;
@@ -51,7 +55,6 @@ void signal_handler(int sig) {
 }
 
 void dpdkThread(int readFd) {
-    // CommandParser parser(netStats);
     // char buffer[256];
     while (true) {
         // int nbytes = read(readFd, buffer, sizeof(buffer));
@@ -67,8 +70,23 @@ void dpdkThread(int readFd) {
 }
 
 int run_control_plane(int readFd) {
-    // CommandParser parser;
-    // parser.loadJson
+    CommandParser parser;
+    {
+        std::string cmd = "load_json";
+        std::string C_input = "/home/ubuntu/Nutcracker/utils/p4-nutcracker/C_CODE/egress.json";
+        std::vector<std::string> input;
+        input.push_back(cmd);
+        input.push_back(C_input);
+        parser.loadJson(input);   
+    }
+    {
+        std::string cmd = "run_test";
+        std::string test_input = "vxlan";
+        std::vector<std::string> input;
+        input.push_back(cmd);
+        input.push_back(test_input);
+        parser.runTest(input);
+    }
 
     while (1) {
         ipc_poll();
@@ -93,7 +111,7 @@ int lcore_main(void * arg) {
         run_control_plane(args->shell_pipe_fd);
     } else {
         while (1) {
-            dpdk_recv();
+            net_loop();
         };        
     }
 
@@ -111,12 +129,14 @@ int main(int argc, char **argv) {
 #ifdef CONFIG_DOCA
     pr_info("init: starting DOCA...\n");
     doca_init();
+    docadv_init();
 #endif  /* CONFIG_DOCA */
 
     /* Register termination handling callback */
     signal(SIGINT, signal_handler);
 
-    // jit_init();
+    pr_info("init: starting JIT...\n");
+    jit_init();
     
     pipe(pipeFds);
 
@@ -166,8 +186,6 @@ int main(int argc, char **argv) {
 
     i = 0;
     n = rte_lcore_count();
-
-    // vxlan_encap_offloading();
 
     args = (struct lcore_arg *)calloc(n, sizeof(struct lcore_arg));
     RTE_LCORE_FOREACH(lcore_id) {

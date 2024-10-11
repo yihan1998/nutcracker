@@ -41,6 +41,19 @@ int __init docadv_ctx_init(struct docadv_context * ctx) {
 		printf("Unable to create work queue. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
+
+#ifdef CONFIG_DOCA_COMPRESS
+	ctx->compress_ctx.dev = compress_config.dev;
+	ctx->compress_ctx.compress_engine = compress_config.compress_engine;
+
+    /* Add workq to RegEx */
+	result = doca_ctx_workq_add(doca_compress_as_ctx(ctx->compress_ctx.compress_engine), ctx->workq);
+	if (result != DOCA_SUCCESS) {
+		printf("Unable to attach work queue to Compress. Reason: %s\n", doca_get_error_string(result));
+		return result;
+	}
+#endif  /* CONFIG_DOCA_COMPRESS */
+
 #elif CONFIG_BLUEFIELD3
     result = doca_pe_create(&ctx->pe);
 	if (result != DOCA_SUCCESS) {

@@ -1,14 +1,19 @@
 #ifndef _SKBUFF_H_
 #define _SKBUFF_H_
 
-#include "list.h"
-#include "kernel.h"
-
 #include <stdint.h>
 
 // #include <netinet/ip.h>
 // #include <netinet/tcp.h>
 // #include <netinet/udp.h>
+
+#include "kernel.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "list.h"
 
 struct msghdr;
 struct rte_mbuf;
@@ -65,5 +70,9 @@ extern struct sk_buff * skb_try_recv_from_queue(struct sock * sk, struct list_he
 extern int skb_wait_for_more_packets(struct sock * sk, int * err, long * timeo_p);
 
 extern int skb_copy_datagram_msg(struct sk_buff * from, int offset, struct msghdr * msg, int size);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif  /* _SKBUFF_H_ */

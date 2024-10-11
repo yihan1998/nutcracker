@@ -936,30 +936,32 @@ int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, str
 int vxlan_encap_offloading() {
 	int port_id = 1234;
 	/* Add ingress */
-	if (1) {
-		struct flow_pipe * pipe = flow_get_pipe("ingress_udp_tbl_0");
-		// pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", 1234);
-		for (int i = 0; i < 10; i++) {
-			pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", port_id + i);
-		}
-	}
+	// if (1) {
+	// 	struct flow_pipe * pipe = flow_get_pipe("ingress_udp_tbl_0");
+	// 	// pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", 1234);
+	// 	for (int i = 0; i < 10; i++) {
+	// 		pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", port_id + i);
+	// 	}
+	// }
 
 	/* Add egress */
 	if (1) {
 		{
+			pr_info("Adding rules to egress_vxlan_encap_tbl_2...\n");
 			struct flow_pipe * pipe = flow_get_pipe("egress_vxlan_encap_tbl_2");
     		// pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_encap_3", 1234);
 			for (int i = 0; i < 10; i++) {
-				pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_encap_3", port_id + i);
+				pipe->swPipe.ops.add_pipe_entry(pipe, "egress_encap_3", port_id + i);
 			}
 		}
 		{
+			pr_info("Adding rules to egress_encap_3...\n");
 			struct flow_pipe * pipe = flow_get_pipe("egress_encap_3");
     		uint8_t srcMac[6] = {0xde,0xed,0xbe,0xef,0xab,0xcd};
     		uint8_t dstMac[6] = {0x10,0x70,0xfd,0xc8,0x94,0x75};
     		// pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", srcMac, dstMac, 5678, 1234, 90);
 			for (int i = 0; i < 10; i++) {
-				pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", dstMac, srcMac, BE_IPV4_ADDR(8,8,8,8), BE_IPV4_ADDR(1,2,3,4), 5678, port_id + 1, 90);
+				pipe->swPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", dstMac, srcMac, BE_IPV4_ADDR(8,8,8,8), BE_IPV4_ADDR(1,2,3,4), 4789, port_id + i, 90);
 			}
 		}
 	}

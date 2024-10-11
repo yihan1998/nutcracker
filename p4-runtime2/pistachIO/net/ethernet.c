@@ -1,5 +1,6 @@
 #include "opt.h"
 #include "utils/printk.h"
+#include "net/net.h"
 #include "net/dpdk.h"
 #include "net/ethernet.h"
 #include "net/ip.h"
@@ -27,11 +28,24 @@ int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 		return NET_RX_DROP;
     }
 
+    unsigned char temp[ETH_ALEN];
+    memcpy(temp, ethhdr->h_source, ETH_ALEN);
+    memcpy(ethhdr->h_source, ethhdr->h_dest, ETH_ALEN);
+    memcpy(ethhdr->h_dest, temp, ETH_ALEN);
+
     skb = alloc_skb(m, pkt, pkt_size);
     if (!skb) {
 		pr_warn("Failed to allocate new skbuff!\n");
 		return NET_RX_DROP;
 	}
+
+    if (run_state_machine(skb) == NET_RX_SUCCESS) {
+		return NET_RX_SUCCESS;
+    }
+    // while (rte_ring_enqueue(fwd_queue, skb) < 0) {
+    //     printf("Failed to enqueue into nf_cq\n");
+    // }
+    return NET_RX_SUCCESS;
 
 #if LATENCY_BREAKDOWN
 	struct pktgen_tstamp * ts = (struct pktgen_tstamp *)(skb->pkt + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr));

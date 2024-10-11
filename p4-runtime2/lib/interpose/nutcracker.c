@@ -8,6 +8,7 @@
 #include <link.h>
 
 #include "opt.h"
+#include "lib.h"
 #include "percpu.h"
 #include "interpose/interpose.h"
 #include "net/dpdk.h"
@@ -53,16 +54,15 @@ int main_hook(int argc, char ** argv, char ** envp) {
 #ifdef CONFIG_DOCA
     pr_info("INIT: initialize DOCA...\n");
     docadv_init();
-#endif  /* CONFIG_DOCA */
 
-#ifdef CONFIG_DOCA
     pr_info("INIT: initialize DOCA driver...\n");
     docadv_ctx_init(&ctx.docadv_ctx);
     docadv_ctx_fetch(&ctx.docadv_ctx);
+    lcore_ctx = &ctx;
 #endif  /* CONFIG_DOCA */
 
-    // pr_info("init: initializing zlib...\n");
-    // zlib_hook_init();
+    pr_info("init: initializing zlib...\n");
+    zlib_hook_init();
 
     kernel_early_boot = false;
 

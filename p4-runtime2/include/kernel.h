@@ -5,6 +5,10 @@
 #include <stddef.h>
 #include <stdatomic.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef max
 #define max(x, y) ({				\
 	typeof(x) _x = (x);			\
@@ -81,5 +85,9 @@
 #define TIMESPEC_TO_NSEC(t) ((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
 #define READ_ONCE(x)	atomic_load_explicit(&(x), memory_order_relaxed)
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif  /* _KERNEL_H_ */

@@ -93,6 +93,27 @@ DECLARE_PER_CPU(struct network_info, net_info);
 extern pthread_spinlock_t rx_lock;
 extern pthread_spinlock_t tx_lock;
 
+#if LATENCY_BREAKDOWN
+struct pktgen_tstamp {
+	uint16_t magic;
+    uint64_t send_start;
+    uint64_t network_recv;
+    uint64_t network_udp_input;
+    uint64_t server_recv;
+    uint64_t server_recvfrom;
+    
+    uint64_t app_total_time;
+    uint64_t app_preprocess_time;
+    uint64_t app_predict_time;
+    uint64_t app_recommend_time;
+    uint64_t app_compress_time;
+
+    uint64_t server_sendto;
+    uint64_t network_udp_output;
+    uint64_t network_send;
+} __attribute__((packed));
+#endif
+
 struct locked_list_head {
     pthread_spinlock_t lock;
     struct list_head head;
@@ -104,9 +125,11 @@ extern struct locked_list_head * pending_sk;
 #define NET_RX_SUCCESS	0	/* keep 'em coming, baby */
 #define NET_RX_DROP		1	/* packet dropped */
 
+struct sk_buff;
+int run_state_machine(struct sk_buff * skb);
+
 // extern int __init packet_init(void);
 extern int __init net_init(void);
-
 extern int net_loop(void);
 
 #ifdef __cplusplus

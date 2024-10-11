@@ -1,7 +1,7 @@
 CXX_CLANG = clang++
 CC 		= gcc
 
-DEBUG	= -DDEBUG
+DEBUG	= -DDEBUG #-DLATENCY_BREAKDOWN
 CXXFLAGS = -Wall -Werror -O3 -g  -I./ -I./include $(DEBUG)
 CXXFLAGS_CLANG = $(CXXFLAGS)
 

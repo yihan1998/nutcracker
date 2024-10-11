@@ -16,6 +16,8 @@ static inline struct ethhdr *eth_hdr(const struct sk_buff *skb) {
 	return (struct ethhdr *)skb_mac_header(skb);
 }
 
+void printEthernetHeader(const struct ethhdr *eth);
+
 extern int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
 extern int ethernet_output(struct sock * sk, struct sk_buff * skb, uint8_t * pkt, int pkt_len);
 

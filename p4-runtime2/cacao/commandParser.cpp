@@ -1,5 +1,6 @@
 #include "utils/commandParser.h"
 // #include "flowPipe.h"
+#include "backend/doca.h"
 #include "drivers/doca/common.h"
 
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
@@ -51,6 +52,41 @@ void CommandParser::instantializeHwPipe(Pipeline& pipeline, struct flow_pipe * p
         auto func = (int (*)(struct flow_pipe *, ...))symbol.getAddress();
         pipe->hwPipe.ops.add_pipe_entry = (int (*)(struct flow_pipe *, const char *, ...))func;
     }
+}
+
+void CommandParser::instantializeFsmPipe(Pipeline& pipeline, struct flow_pipe * pipe, const json& fsmOps) {
+    if(fsmOps.contains("create_pipe")) {
+        std::string name = fsmOps["create_pipe"];
+        auto symbol = cantFail(pipeline.JitEnv->lookup(name));
+        auto func = (int (*)(struct flow_pipe *))symbol.getAddress();
+        pipe->swPipe.ops.create_pipe = func;
+    }
+    // if(fsmOps.contains("init_pipe")) {
+    //     std::string name = hwOps["init_pipe"];
+    //     auto symbol = cantFail(pipeline.JitEnv->lookup(name));
+    //     auto func = (int (*)(struct flow_pipe *))symbol.getAddress();
+    //     pipe->hwPipe.ops.init_pipe = func;
+    // }
+    // if(fsmOps.contains("get_actions_list")) {
+    //     std::string name = hwOps["get_actions_list"];
+    //     auto symbol = cantFail(pipeline.JitEnv->lookup(name));
+    //     auto func = (int (*)(struct flow_pipe *))symbol.getAddress();
+    //     pipe->hwPipe.ops.get_actions_list = func;
+    // }
+    if(fsmOps.contains("add_pipe_entry")) {
+        std::string name = fsmOps["add_pipe_entry"];
+        auto symbol = cantFail(pipeline.JitEnv->lookup(name));
+        auto func = (int (*)(struct flow_pipe *, ...))symbol.getAddress();
+        pipe->swPipe.ops.add_pipe_entry = (int (*)(struct flow_pipe *, const char *, ...))func;
+    }
+    if(fsmOps.contains("run")) {
+        std::string name = fsmOps["run"];
+        auto symbol = cantFail(pipeline.JitEnv->lookup(name));
+        auto func = (struct flow_pipe * (*)(struct flow_pipe * pipe, struct sk_buff *skb, ...))symbol.getAddress();
+        pipe->swPipe.ops.run = func;
+    }
+
+    init_list_head(&pipe->swPipe.list);
 }
 
 void CommandParser::displayTableInfo(const std::vector<std::string>& args) {
@@ -257,18 +293,33 @@ void CommandParser::loadJson(const std::vector<std::string>& args) {
         pipeline->Pipes.push_back(newFlowPipe);
 
         if (pipe.contains("hw_enable") && pipe["hw_enable"]) {
-            std::cout << "    Create HW Pipe for " << pipeName << " => " << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
+            std::cout << "    Instantialize HW Pipe for " << pipeName << " => " << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
             instantializeHwPipe(*pipeline, newFlowPipe, pipe["hw_ops"]);
             // newFlowPipe->hwPipe.ops.create_pipe(newFlowPipe);
         }
 
-        std::cout << "  Create pipe " << pipeName << " => " << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
+        if (pipe.contains("fsm_enable") && pipe["fsm_enable"]) {
+            std::cout << "    Instantialize FSM Pipe for " << pipeName << " => " << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
+            instantializeFsmPipe(*pipeline, newFlowPipe, pipe["fsm_ops"]);
+            // newFlowPipe->hwPipe.ops.create_pipe(newFlowPipe);
+        }
+
+        std::cout << "  Instantialize pipe " << pipeName << " => " << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
     }
 
     pipelines.push_back(pipeline);
 
     for (const auto& pipe : pipeline->Pipes) {
-        pipe->hwPipe.ops.create_pipe(pipe);
+        if (pipe->hwPipe.ops.create_pipe) {
+            std::cout << "Creating HW pipe for " << pipe->name << " => ";
+            pipe->hwPipe.ops.create_pipe(pipe);
+            std::cout << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
+        }
+        if (pipe->swPipe.ops.create_pipe) {
+            std::cout << "Creating FSM pipe for " << pipe->name << " => ";
+            pipe->swPipe.ops.create_pipe(pipe);
+            std::cout << "\033[32m" << "[DONE]" << "\033[0m" << std::endl;
+        }
     }
 
     // Initialize all pipes

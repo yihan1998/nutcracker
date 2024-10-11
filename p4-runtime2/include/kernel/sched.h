@@ -35,6 +35,8 @@ extern struct rte_ring * nf_cq;
 
 DECLARE_PER_CPU(struct rte_ring *, fwd_queue);
 
+extern uint64_t get_current_time_ns(void);
+
 extern void * worker_main(void);
 extern int __init sched_init(void);
 

@@ -46,7 +46,6 @@ extern struct doca_flow_port *ports[MAX_PORTS];
 extern struct doca_flow_pipe *rss_pipe[2], *hairpin_pipe[2];
 
 int doca_init();
-int vxlan_encap_offloading();
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -42,8 +42,10 @@ int udp_input(struct sk_buff * skb, struct iphdr * iphdr, struct udphdr * udphdr
 
     sk = udp_lookup_sock(iphdr->saddr, udphdr->source, iphdr->daddr, udphdr->dest);
 	if (!sk) {
-		sk = udp_lookup_sock(iphdr->saddr, udphdr->source, INADDR_ANY, udphdr->dest);
+		sk = udp_lookup_sock(INADDR_ANY, 0, INADDR_ANY, udphdr->dest);
 		if (!sk) {
+			pr_debug(UDP_DEBUG, "[%s:%d] saddr: " IP_STRING ", sport: %u, daddr: " IP_STRING ", dport: %u\n",
+                    __func__, __LINE__, NET_IP_FMT(iphdr->saddr), ntohs(udphdr->source), NET_IP_FMT(iphdr->daddr), ntohs(udphdr->dest));
             pr_warn("Socket not found!\n");
 			return NET_RX_DROP;
 		}

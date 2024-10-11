@@ -1,6 +1,8 @@
 #ifndef _FLOWPIPE_INTERNAL_H_
 #define _FLOWPIPE_INTERNAL_H_
 
+#include "list.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -168,13 +170,14 @@ struct flow_pipe_cfg
 /* END AUTOGEN HEADER */
 
 #include "drivers/doca/common.h"
+struct sk_buff;
 
 struct pipe_operations {
     int (*create_pipe)(struct flow_pipe * pipe);
     int (*init_pipe)(struct flow_pipe * pipe);
     int (*get_actions_list)(struct flow_pipe * pipe);
-    // int (*add_pipe_entry)(struct flow_pipe * pipe, struct flow_pipe * action_pipe, ...);
     int (*add_pipe_entry)(struct flow_pipe * pipe, const char * action_name, ...);
+    struct flow_pipe *(*run)(struct flow_pipe * pipe, struct sk_buff *skb, ...);
 };
 
 #define DOCA_MAX_PORTS  2
@@ -185,8 +188,9 @@ struct hw_flow_pipe {
 };
 
 struct sw_flow_pipe {
-    void * pipe[DOCA_MAX_PORTS];
+    void * pipe;
     struct pipe_operations ops;
+    struct list_head list;
 };
 
 struct actionEntry {
@@ -206,6 +210,13 @@ struct flow_pipe {
 extern uint32_t pipe_id;
 
 struct flow_pipe * instantialize_flow_pipe(const char * name);
+
+uint8_t * get_packet_internal(struct sk_buff * skb);
+uint32_t get_packet_size_internal(struct sk_buff * skb);
+struct sk_buff* prepend_packet_internal(struct sk_buff* skb, uint32_t prepend_size);
+bool fsm_table_lookup_internal(struct flow_match* pipe_match, struct flow_match* match, struct sk_buff* skb);
+
+struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct sk_buff* skb);
 
 struct flow_pipe* flow_get_pipe(char* pipe_name);
 int flow_get_pipe_id_by_name(char* pipe_name);

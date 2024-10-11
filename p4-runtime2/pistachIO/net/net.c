@@ -13,8 +13,11 @@
 #include "utils/printk.h"
 #include "init.h"
 #include "net/net.h"
+#include "net/dpdk.h"
 #include "net/flow.h"
 #include "net/raw.h"
+#include "net/ethernet.h"
+#include "backend/stateMachine.h"
 
 static struct rte_hash_parameters params = {
     .entries = 2048,
@@ -36,9 +39,42 @@ struct rte_tailq_entry_head * post_routing_table;
 
 pthread_spinlock_t rx_lock;
 pthread_spinlock_t tx_lock;
+pthread_rwlock_t fsm_lock;
 
 const struct rte_memzone * pending_sk_mz;
 struct locked_list_head * pending_sk;
+
+struct state_machine fsm;
+
+int __init state_machine_init(void) {
+    fsm.ingress_root = NULL;
+    init_list_head(&fsm.ingress_pipes);
+    fsm.egress_root = NULL;
+    init_list_head(&fsm.egress_pipes);
+    return 0;
+}
+
+int run_state_machine(struct sk_buff * skb) {
+    int ret = NET_RX_DROP;
+    struct flow_pipe * curr = fsm.ingress_root;
+    pthread_rwlock_rdlock(&fsm_lock);
+    while(curr) {
+    	// printf(ESC GREEN "[INFO]" RESET " Execute pipe %s...\n", curr->name);
+        // curr = curr->swPipe.ops.run(curr, skb);
+        curr = fsm_table_lookup(curr, skb);
+    }
+    curr = fsm.egress_root;
+    while(curr) {
+    	// pr_info("Execute pipe %s...\n", curr->name);
+        // curr = curr->swPipe.ops.run(curr, skb);
+        curr = fsm_table_lookup(curr, skb);
+    }
+    pthread_rwlock_unlock(&fsm_lock);
+    while (rte_ring_enqueue(fwd_queue, skb) < 0) {
+        printf("Failed to enqueue into nf_cq\n");
+    }
+    return ret;
+}
 
 int __init net_init(void) {
     struct rte_tailq_elem pre_routing_tailq = {
@@ -103,7 +139,16 @@ int __init net_init(void) {
     pthread_spin_init(&rx_lock, PTHREAD_PROCESS_SHARED);
     pthread_spin_init(&tx_lock, PTHREAD_PROCESS_SHARED);
 
+    pthread_rwlockattr_t attr;
+    pthread_rwlockattr_init(&attr);
+    pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    if (pthread_rwlock_init(&fsm_lock, &attr) != 0) {
+        perror("Failed to initialize rwlock");
+    }
+
     raw_init();
+
+    state_machine_init();
 
     return 0;
 }

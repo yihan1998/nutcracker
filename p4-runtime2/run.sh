@@ -1,0 +1,1 @@
+sudo ./build/nutcracker -l 0 -n 4 -a auxiliary:mlx5_core.sf.3,dv_flow_en=2 -a auxiliary:mlx5_core.sf.5,dv_flow_en=2

@@ -20,10 +20,10 @@ using CommandHandler = std::function<void(const std::vector<std::string>&)>;
 
 class CommandParser {
 public:
-    CommandParser(NetStats& netStats) : netStats(netStats) {
+    CommandParser(/*NetStats& netStats*/) /*: netStats(netStats)*/ {
         registerCommand("help", [this](const std::vector<std::string>& args) { displayHelp(args); });
-        registerCommand("exit", [&netStats](const std::vector<std::string>&) { netStats.running.store(false); });
-        registerCommand("quit", [&netStats](const std::vector<std::string>&) { netStats.running.store(false); });
+        // registerCommand("exit", [&netStats](const std::vector<std::string>&) { netStats.running.store(false); });
+        // registerCommand("quit", [&netStats](const std::vector<std::string>&) { netStats.running.store(false); });
         registerCommand("load", [this](const std::vector<std::string>& args) { loadJson(args); });
         registerCommand("run_test", [this](const std::vector<std::string>& args) { runTest(args); });
         registerCommand("table_info", [this](const std::vector<std::string>& args) { displayTableInfo(args); });
@@ -41,8 +41,7 @@ public:
         }
     }
 
-private:
-    [[maybe_unused]] NetStats& netStats;
+    // [[maybe_unused]] NetStats& netStats;
     std::map<std::string, CommandHandler> commands;
 
     void executeCommand(const std::vector<std::string>& tokens) {
@@ -63,6 +62,8 @@ private:
     }
 
     void instantializeHwPipe(Pipeline& pipeline, struct flow_pipe * pipe, const json& hwOps);
+    void instantializeFsmPipe(Pipeline& pipeline, struct flow_pipe * pipe, const json& fsmOps);
+
     void loadJson(const std::vector<std::string>& args);
     void runTest(const std::vector<std::string>& args);
     void displayTableInfo(const std::vector<std::string>& args);

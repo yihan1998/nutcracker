@@ -28,7 +28,7 @@ extern "C" {
 #define TX_DESC_DEFAULT    1024
 
 #define MAX_MTABLE_SIZE		64
-#define MAX_PKT_BURST       64
+#define MAX_PKT_BURST       32
 
 int __init dpdk_init(int argc, char ** argv);
 int dpdk_recv();
@@ -45,6 +45,8 @@ struct dpdk_config {
 	struct dpdk_port_config port_config;
 	struct rte_mempool *mbuf_pool;
 };
+
+extern pthread_rwlock_t fsm_lock;
 
 extern struct dpdk_config dpdk_config;
 

@@ -110,7 +110,8 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 
 	result = doca_mmap_dev_add(info->mmap, dev);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to add device to doca_mmap. Reason: %s\n", doca_get_error_string(result));
+		printf("Unable to add device to doca_mmap. (dev: %p, mmap: %p) Reason: %s\n", 
+				dev, info->mmap, doca_get_error_string(result));
 		return 0;
 	}
 #elif CONFIG_BLUEFIELD3
@@ -362,7 +363,6 @@ int build_hairpin_pipe(uint16_t port_id) {
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg pipe_cfg;
-	struct doca_flow_pipe_entry *entry;
 	struct entries_status *status;
 	int num_of_entries = 1;
 	doca_error_t result;

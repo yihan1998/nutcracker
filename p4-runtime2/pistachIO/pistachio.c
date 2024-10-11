@@ -38,6 +38,7 @@ int net_loop(void) {
         pthread_spin_unlock(&rx_lock);
         if (nb_recv) {
             net_info.sec_recv += nb_recv;
+            pr_debug(STACK_DEBUG, "%s: receive %d packets\n", __func__, nb_recv);
             for (int i = 0; i < nb_recv; i++) {
                 pkt = dpdk_get_rxpkt(portid, pkts, i, &pkt_size);
                 // fprintf(stderr, "CPU %02d| PKT %p is received\n", sched_getcpu(), pkt);
@@ -86,6 +87,7 @@ int net_loop(void) {
                 if (ret < 0) {
                     rte_pktmbuf_free(mbuf);
                 }
+                // free_skb(skb);
             }
             rte_mempool_put_bulk(skb_mp, (void *)skbs, nb_recv);
         }
