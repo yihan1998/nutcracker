@@ -46,6 +46,7 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
+	struct doca_flow_fwd fwd_miss;
 	struct doca_flow_monitor counter;
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	doca_error_t result;
@@ -53,6 +54,7 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
+	memset(&fwd_miss, 0, sizeof(fwd_miss));
 	memset(&counter, 0, sizeof(counter));
 
 	/* 5 tuple match */
@@ -103,7 +105,9 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	fwd.type = DOCA_FLOW_FWD_PORT;
 	fwd.port_id = port_id ^ 1;
 
-	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	fwd_miss.type = DOCA_FLOW_FWD_DROP;
+
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, &fwd_miss, pipe);
 destroy_pipe_cfg:
 	doca_flow_pipe_cfg_destroy(pipe_cfg);
 	return result;
