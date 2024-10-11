@@ -54,7 +54,7 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	memset(&fwd, 0, sizeof(fwd));
 
 	/* 5 tuple match */
-	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
+	// match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 	match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 	// match.outer.ip4.src_ip = 0xffffffff;
 	// match.outer.ip4.dst_ip = 0xffffffff;
