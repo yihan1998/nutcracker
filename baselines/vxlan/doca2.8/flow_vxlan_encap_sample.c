@@ -54,18 +54,18 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 	memset(&fwd, 0, sizeof(fwd));
 
 	/* 5 tuple match */
-	// match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
+	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 	match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 	// match.outer.ip4.src_ip = 0xffffffff;
-	// match.outer.ip4.dst_ip = 0xffffffff;
+	match.outer.ip4.dst_ip = 0xffffffff;
 	// match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TRANSPORT;
 	// match.outer.transport.src_port = 0xffff;
 	// match.outer.transport.dst_port = 0xffff;
 
 	/* set meta data to match on the egress domain */
 	actions.meta.pkt_meta = UINT32_MAX;
-	// actions.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TRANSPORT;
-	// actions.outer.transport.src_port = 0xffff;
+	actions.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TRANSPORT;
+	actions.outer.transport.src_port = 0xffff;
 	actions_arr[0] = &actions;
 
 	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
@@ -213,7 +213,7 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
 	struct doca_flow_pipe_entry *entry;
 	doca_error_t result;
 
-	// doca_be32_t dst_ip_addr = BE_IPV4_ADDR(8, 8, 8, 8);
+	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(10, 10, 0, 1);
 	// doca_be32_t src_ip_addr = BE_IPV4_ADDR(1, 2, 3, 4);
 	// doca_be16_t dst_port = rte_cpu_to_be_16(80);
 	// doca_be16_t src_port = rte_cpu_to_be_16(1234);
@@ -221,7 +221,7 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 
-	// match.outer.ip4.dst_ip = dst_ip_addr;
+	match.outer.ip4.dst_ip = dst_ip_addr;
 	// match.outer.ip4.src_ip = src_ip_addr;
 	// match.outer.transport.dst_port = dst_port;
 	// match.outer.transport.src_port = src_port;
