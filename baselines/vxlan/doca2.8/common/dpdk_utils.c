@@ -485,7 +485,7 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 		result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Cannot hairpin self port %" PRIu8 ", ret: %s",
-				     port, doca_get_error_string(result));
+				     port, doca_error_get_descr(result));
 			return result;
 		}
 		for (queue_index = 0; queue_index < nb_hairpin_queues / 2; queue_index++)
@@ -493,7 +493,7 @@ port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct application_dpdk_c
 		result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Cannot hairpin peer port %" PRIu8 ", ret: %s",
-				     port ^ 1, doca_get_error_string(result));
+				     port ^ 1, doca_error_get_descr(result));
 			return result;
 		}
 	} else if (nb_hairpin_queues) {
@@ -904,21 +904,21 @@ dpdk_chunk_to_mmap_cb(struct rte_mempool *mp, void *opaque, struct rte_mempool_m
 
 	result = doca_mmap_set_memrange(new_mmap, memhdr->addr, memhdr->len);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to set memory range of memory map (input): %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to set memory range of memory map (input): %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return;
 	}
 
 	result = doca_mmap_dev_add(new_mmap, mempool_shadow->device);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return;
 	}
 
 	result = doca_mmap_start(new_mmap);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to start memory map: %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return;
 	}
@@ -980,21 +980,21 @@ dpdk_ext_chunk_to_mmap(struct dpdk_mempool_shadow *mempool_shadow, void *chunk, 
 
 	result = doca_mmap_set_memrange(new_mmap, chunk, len);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to set memory range of memory map (input): %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to set memory range of memory map (input): %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return result;
 	}
 
 	result = doca_mmap_dev_add(new_mmap, mempool_shadow->device);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return result;
 	}
 
 	result = doca_mmap_start(new_mmap);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Unable to start memory map: %s", doca_error_get_descr(result));
 		doca_mmap_destroy(new_mmap);
 		return result;
 	}

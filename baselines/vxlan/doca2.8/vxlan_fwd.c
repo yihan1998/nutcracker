@@ -981,14 +981,14 @@ vxlan_fwd_init_ports_and_pipes(struct vxlan_fwd_port_cfg *port_cfg)
 		curr_port_cfg->port_id = port_id ^ 1;
 		result = vxlan_fwd_create_vxlan_encap_pipe(curr_port_cfg);
 		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to create vxlan encap pipe: %s", doca_get_error_string(result));
+			DOCA_LOG_ERR("Failed to create vxlan encap pipe: %s", doca_error_get_descr(result));
 			return -1;
 		}
 
 		DOCA_LOG_INFO("Add VXLAN encap pipe entry...");
 		result = vxlan_fwd_add_vxlan_encap_pipe_entry(curr_port_cfg);
 		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to add entry to vxlan encap pipe: %s", doca_get_error_string(result));
+			DOCA_LOG_ERR("Failed to add entry to vxlan encap pipe: %s", doca_error_get_descr(result));
 			return -1;
 		}
 	}

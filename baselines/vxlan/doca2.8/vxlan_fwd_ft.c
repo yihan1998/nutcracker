@@ -286,14 +286,14 @@ vxlan_fwd_ft_find(struct vxlan_fwd_ft *ft,
 
 	if (vxlan_fwd_ft_key_fill(pinfo, &key)) {
 		result = DOCA_ERROR_UNEXPECTED;
-		DOCA_LOG_DBG("Failed to build key for entry in the flow table %s", doca_get_error_string(result));
+		DOCA_LOG_DBG("Failed to build key for entry in the flow table %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	fe = _vxlan_fwd_ft_find(ft, &key);
 	if (fe == NULL) {
 		result = DOCA_ERROR_NOT_FOUND;
-		DOCA_LOG_DBG("Entry not found in flow table %s", doca_get_error_string(result));
+		DOCA_LOG_DBG("Entry not found in flow table %s", doca_error_get_descr(result));
 		return result;
 	}
 
@@ -317,14 +317,14 @@ vxlan_fwd_ft_add_new(struct vxlan_fwd_ft *ft,
 
 	if (vxlan_fwd_ft_key_fill(pinfo, &key)) {
 		result = DOCA_ERROR_UNEXPECTED;
-		DOCA_LOG_DBG("Failed to build key: %s", doca_get_error_string(result));
+		DOCA_LOG_DBG("Failed to build key: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	new_e = calloc(1, ft->cfg.entry_size);
 	if (new_e == NULL) {
 		result = DOCA_ERROR_NO_MEMORY;
-		DOCA_LOG_WARN("OOM: %s", doca_get_error_string(result));
+		DOCA_LOG_WARN("OOM: %s", doca_error_get_descr(result));
 		return result;
 	}
 

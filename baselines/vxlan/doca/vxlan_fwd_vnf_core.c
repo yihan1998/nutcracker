@@ -255,23 +255,6 @@ hairpinq_callback(void *param, void *config)
 }
 
 /*
- * Callback function for setting dedicated thread for aging handling
- *
- * @param [in]: parameter indicates whther or not to use dedicated thread for aging
- * @config [out]: application configuration to set the usage of a dedicated thread for aged flows
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-static doca_error_t
-age_thread_callback(void *param, void *config)
-{
-	struct vxlan_fwd_config *app_config = (struct vxlan_fwd_config *) config;
-
-	app_config->age_thread = *(bool *) param;
-	DOCA_LOG_DBG("Set age_thread:%s", app_config->age_thread ? "true":"false");
-	return DOCA_SUCCESS;
-}
-
-/*
  * Registers all flags used by the application for DOCA argument parser, so that when parsing
  * it can be parsed accordingly
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
@@ -281,7 +264,7 @@ register_vxlan_fwd_params(void)
 {
 	doca_error_t result;
 	struct doca_argp_param *stats_param, *nr_queues_param, *rx_only_param, *hw_offload_param;
-	struct doca_argp_param *hairpinq_param, *age_thread_param;
+	struct doca_argp_param *hairpinq_param;
 
 	/* Create and register stats timer param */
 	result = doca_argp_param_create(&stats_param);
@@ -365,23 +348,6 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_callback(hairpinq_param, hairpinq_callback);
 	doca_argp_param_set_type(hairpinq_param, DOCA_ARGP_TYPE_BOOLEAN);
 	result = doca_argp_register_param(hairpinq_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	/* Create and register age thread param */
-	result = doca_argp_param_create(&age_thread_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
-		return result;
-	}
-	doca_argp_param_set_short_name(age_thread_param, "a");
-	doca_argp_param_set_long_name(age_thread_param, "age-thread");
-	doca_argp_param_set_description(age_thread_param, "Start thread do aging");
-	doca_argp_param_set_callback(age_thread_param, age_thread_callback);
-	doca_argp_param_set_type(age_thread_param, DOCA_ARGP_TYPE_BOOLEAN);
-	result = doca_argp_register_param(age_thread_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;

@@ -72,14 +72,12 @@ LIST_HEAD(vxlan_fwd_ft_entry_head, vxlan_fwd_ft_entry); /* Head of the list of t
  * @user_data_size [in]: private data for user
  * @vxlan_fwd_aging_cb [in]: function pointer
  * @vxlan_fwd_aging_hw_cb [in]: function pointer
- * @age_thread [in/out]: has dedicated age thread or not
  * @return: pointer to new allocated flow table and NULL otherwise
  */
 struct vxlan_fwd_ft *
 vxlan_fwd_ft_create(int nb_flows, uint32_t user_data_size,
 	void (*vxlan_fwd_aging_cb)(struct vxlan_fwd_ft_user_ctx *ctx),
-	void (*vxlan_fwd_aging_hw_cb)(void),
-	bool age_thread);
+	void (*vxlan_fwd_aging_hw_cb)(void));
 
 /*
  * Destroy flow table

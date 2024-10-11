@@ -264,12 +264,12 @@ register_vxlan_fwd_params(void)
 {
 	doca_error_t result;
 	struct doca_argp_param *stats_param, *nr_queues_param, *rx_only_param, *hw_offload_param;
-	struct doca_argp_param *hairpinq_param, *age_thread_param;
+	struct doca_argp_param *hairpinq_param;
 
 	/* Create and register stats timer param */
 	result = doca_argp_param_create(&stats_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_error_get_descr(result));
 		return result;
 	}
 	doca_argp_param_set_short_name(stats_param, "t");
@@ -280,14 +280,14 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_type(stats_param, DOCA_ARGP_TYPE_INT);
 	result = doca_argp_register_param(stats_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	/* Create and register queues number param */
 	result = doca_argp_param_create(&nr_queues_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_error_get_descr(result));
 		return result;
 	}
 	doca_argp_param_set_short_name(nr_queues_param, "q");
@@ -298,14 +298,14 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_type(nr_queues_param, DOCA_ARGP_TYPE_INT);
 	result = doca_argp_register_param(nr_queues_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	/* Create and register RX only param */
 	result = doca_argp_param_create(&rx_only_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_error_get_descr(result));
 		return result;
 	}
 	doca_argp_param_set_short_name(rx_only_param, "r");
@@ -315,14 +315,14 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_type(rx_only_param, DOCA_ARGP_TYPE_BOOLEAN);
 	result = doca_argp_register_param(rx_only_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	/* Create and register HW offload param */
 	result = doca_argp_param_create(&hw_offload_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_error_get_descr(result));
 		return result;
 	}
 	doca_argp_param_set_short_name(hw_offload_param, "o");
@@ -332,14 +332,14 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_type(hw_offload_param, DOCA_ARGP_TYPE_BOOLEAN);
 	result = doca_argp_register_param(hw_offload_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	/* Create and register hairpin queue param */
 	result = doca_argp_param_create(&hairpinq_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_error_get_descr(result));
 		return result;
 	}
 	doca_argp_param_set_short_name(hairpinq_param, "hq");
@@ -349,14 +349,14 @@ register_vxlan_fwd_params(void)
 	doca_argp_param_set_type(hairpinq_param, DOCA_ARGP_TYPE_BOOLEAN);
 	result = doca_argp_register_param(hairpinq_param);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_error_get_descr(result));
 		return result;
 	}
 
 	/* Register version callback for DOCA SDK & RUNTIME */
 	result = doca_argp_register_version_callback(sdk_version_callback);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register version callback: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register version callback: %s", doca_error_get_descr(result));
 		return result;
 	}
 	return DOCA_SUCCESS;

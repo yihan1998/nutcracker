@@ -66,19 +66,19 @@ main(int argc, char **argv)
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("doca_vxlan_fwd", &app_cfg);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_error_get_descr(result));
 		return EXIT_FAILURE;
 	}
 	doca_argp_set_dpdk_program(dpdk_init);
 	result = register_vxlan_fwd_params();
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register application params: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to register application params: %s", doca_error_get_descr(result));
 		doca_argp_destroy();
 		return EXIT_FAILURE;
 	}
 	result = doca_argp_start(argc, argv);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to parse application input: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to parse application input: %s", doca_error_get_descr(result));
 		doca_argp_destroy();
 		return EXIT_FAILURE;
 	}
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 	/* update queues and ports */
 	result = dpdk_queues_and_ports_init(&dpdk_config);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to update application ports and queues: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to update application ports and queues: %s", doca_error_get_descr(result));
 		exit_status = EXIT_FAILURE;
 		goto dpdk_destroy;
 	}

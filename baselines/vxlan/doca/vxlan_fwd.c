@@ -139,8 +139,7 @@ vxlan_fwd_create_ins(struct vxlan_fwd_port_cfg *port_cfg)
 
 	vxlan_fwd_ins->ft = vxlan_fwd_ft_create(VXLAN_FWD_MAX_FLOWS,
 					sizeof(struct vxlan_fwd_pipe_entry),
-					&vxlan_fwd_aged_flow_cb, NULL,
-					port_cfg->age_thread);
+					&vxlan_fwd_aged_flow_cb, NULL);
 	if (vxlan_fwd_ins->ft == NULL) {
 		DOCA_LOG_ERR("Failed to allocate FT");
 		goto fail_init;
@@ -942,7 +941,6 @@ vxlan_fwd_init_ports_and_pipes(struct vxlan_fwd_port_cfg *port_cfg)
 		curr_port_cfg->is_hairpin = port_cfg->is_hairpin;
 		curr_port_cfg->nb_meters = port_cfg->nb_meters;
 		curr_port_cfg->nb_counters = port_cfg->nb_counters;
-		curr_port_cfg->age_thread = port_cfg->age_thread;
 
 		DOCA_LOG_INFO("Build hairpin flow...");
 		result = vxlan_fwd_build_hairpin_flow(curr_port_cfg->port_id);

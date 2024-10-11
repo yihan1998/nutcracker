@@ -10,7 +10,6 @@ struct vxlan_fwd_port_cfg {
 	uint32_t nb_meters;	/* Number of meters of the port used by the application */
 	uint32_t nb_counters;	/* Number of counters for the port used by the application */
 	bool is_hairpin;	/* Number of hairpin queues */
-	bool age_thread;	/* Whether or not aging is handled by a dedicated thread */
 };
 
 /*
