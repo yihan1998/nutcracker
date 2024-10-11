@@ -199,6 +199,8 @@ destroy_pipe_cfg:
 	return result;
 }
 
+struct doca_flow_pipe_entry *match_entry[2];
+
 /*
  * Add DOCA Flow pipe entry with example 5 tuple match
  *
@@ -206,11 +208,13 @@ destroy_pipe_cfg:
  * @status [in]: user context for adding entry
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise.
  */
-static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct entries_status *status)
+static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, 
+							struct entries_status *status, 
+						   	struct doca_flow_pipe_entry **entry)
 {
 	struct doca_flow_match match;
 	struct doca_flow_actions actions;
-	struct doca_flow_pipe_entry *entry;
+	// struct doca_flow_pipe_entry *entry;
 	doca_error_t result;
 
 	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(10, 10, 0, 1);
@@ -230,12 +234,14 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
 	// actions.outer.transport.src_port = rte_cpu_to_be_16(1235);
 	actions.action_idx = 0;
 
-	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, &entry);
+	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, entry);
 	if (result != DOCA_SUCCESS)
 		return result;
 
 	return DOCA_SUCCESS;
 }
+
+struct doca_flow_pipe_entry *encap_entry[2];
 
 /*
  * Add DOCA Flow pipe entry with example encap values
@@ -247,11 +253,11 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
  */
 static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 					       enum doca_flow_tun_ext_vxlan_type vxlan_type,
-					       struct entries_status *status)
+					       struct entries_status *status, 
+						   struct doca_flow_pipe_entry *entry)
 {
 	struct doca_flow_match match;
 	struct doca_flow_actions actions;
-	struct doca_flow_pipe_entry *entry;
 	doca_error_t result;
 
 	doca_be32_t encap_dst_ip_addr = BE_IPV4_ADDR(81, 81, 81, 81);
@@ -304,7 +310,7 @@ static doca_error_t add_vxlan_encap_pipe_entry(struct doca_flow_pipe *pipe,
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 
-	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, &entry);
+	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, &encap_entry[port]);
 	if (result != DOCA_SUCCESS)
 		return result;
 
@@ -359,7 +365,7 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 			return result;
 		}
 
-		result = add_match_pipe_entry(pipe, &status_ingress);
+		result = add_match_pipe_entry(pipe, &status_ingress, &match_entry[port_id]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to add entry to match pipe: %s", doca_error_get_descr(result));
 			stop_doca_flow_ports(nb_ports, ports);
@@ -375,7 +381,7 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 			return result;
 		}
 
-		result = add_vxlan_encap_pipe_entry(pipe, vxlan_type, &status_egress);
+		result = add_vxlan_encap_pipe_entry(pipe, vxlan_type, &status_egress, &encap_entry[port_id]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to add entry to vxlan encap pipe: %s", doca_error_get_descr(result));
 			stop_doca_flow_ports(nb_ports, ports);
@@ -415,7 +421,19 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 	}
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
-	while(1);
+	struct doca_flow_resource_query stats;
+	while(1) {
+		sleep(1);
+		for (port_id = 0; port_id < nb_ports; port_id++) {
+			result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Port %d failed to query main pipe entry: %s",
+								port_id, doca_error_get_descr(result));
+				return result;
+			}
+			DOCA_LOG_INFO("Port %d, main pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+		}
+	}
 
 	result = stop_doca_flow_ports(nb_ports, ports);
 	doca_flow_destroy();
