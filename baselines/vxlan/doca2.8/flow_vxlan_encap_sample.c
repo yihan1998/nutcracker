@@ -213,10 +213,10 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, struct ent
 	struct doca_flow_pipe_entry *entry;
 	doca_error_t result;
 
-	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(8, 8, 8, 8);
-	doca_be32_t src_ip_addr = BE_IPV4_ADDR(1, 2, 3, 4);
-	doca_be16_t dst_port = rte_cpu_to_be_16(80);
-	doca_be16_t src_port = rte_cpu_to_be_16(1234);
+	// doca_be32_t dst_ip_addr = BE_IPV4_ADDR(8, 8, 8, 8);
+	// doca_be32_t src_ip_addr = BE_IPV4_ADDR(1, 2, 3, 4);
+	// doca_be16_t dst_port = rte_cpu_to_be_16(80);
+	// doca_be16_t src_port = rte_cpu_to_be_16(1234);
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
