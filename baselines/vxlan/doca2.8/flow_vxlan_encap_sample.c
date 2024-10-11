@@ -415,7 +415,7 @@ doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type v
 	}
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
-	sleep(10);
+	while(1);
 
 	result = stop_doca_flow_ports(nb_ports, ports);
 	doca_flow_destroy();
