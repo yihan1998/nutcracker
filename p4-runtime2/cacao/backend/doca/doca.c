@@ -105,7 +105,7 @@ int test_create_pipe() {
 static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int port_id, struct doca_flow_pipe **pipe)
 {
 	struct doca_flow_match match;
-	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
+	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
 	struct entries_status *status;
@@ -150,7 +150,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 		return result;
 	}
 
-	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTION_ARRAY);
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
 		return result;
