@@ -19,7 +19,7 @@ project('DOCA_SAMPLE', 'C', 'CPP',
 	meson_version: '>= 0.61.2'
 )
 
-SAMPLE_NAME = 'flow_vxlan_encap'
+SAMPLE_NAME = 'flow_monitor'
 
 # Comment this line to restore warnings of experimental DOCA features
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])

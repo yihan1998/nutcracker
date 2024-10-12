@@ -34,7 +34,7 @@
 DOCA_LOG_REGISTER(FLOW_VXLAN_ENCAP::MAIN);
 
 /* Sample's Logic */
-doca_error_t flow_vxlan_encap(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan_type);
+doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan_type);
 
 /*
  * Config for vxlan_encap params
@@ -164,9 +164,9 @@ int main(int argc, char **argv)
 	}
 
 	/* run sample */
-	result = flow_vxlan_encap(dpdk_config.port_config.nb_queues, app_cfg.vxlan_type);
+	result = flow_monitor(dpdk_config.port_config.nb_queues, app_cfg.vxlan_type);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("flow_vxlan_encap() encountered an error: %s", doca_error_get_descr(result));
+		DOCA_LOG_ERR("flow_monitor() encountered an error: %s", doca_error_get_descr(result));
 		goto dpdk_ports_queues_cleanup;
 	}
 
