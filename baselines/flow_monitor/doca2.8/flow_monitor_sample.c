@@ -210,6 +210,7 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 			return result;
 		}
 		DOCA_LOG_INFO("Port %d, monitor pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+#endif
 	}
 
 	result = stop_doca_flow_ports(nb_ports, ports);
