@@ -171,9 +171,9 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 			return result;
 		}
 
-		struct doca_flow_pipe_entry * entry[1];
+		struct doca_flow_pipe_entry * entries[1];
 		for (int i = 0; i < 1; i++) {
-			result = add_match_pipe_entry(pipe, i, &status_ingress, &entry);
+			result = add_match_pipe_entry(pipe, i, &status_ingress, &entries[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to add entry to match pipe: %s", doca_error_get_descr(result));
 				stop_doca_flow_ports(nb_ports, ports);
