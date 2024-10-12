@@ -74,7 +74,7 @@ struct match_action_table_entry {
 struct list_head match_action_table;
 
 static struct rte_hash_parameters params = {
-    .entries = 2048,
+    .entries = 128,
     .key_len = ETH_ALEN,
     .hash_func = rte_jhash,
     .hash_func_init_val = 0,
@@ -82,7 +82,9 @@ static struct rte_hash_parameters params = {
     .extra_flag = RTE_HASH_EXTRA_FLAGS_RW_CONCURRENCY_LF
 				| RTE_HASH_EXTRA_FLAGS_MULTI_WRITER_ADD,
 };
-struct rte_hash * flow_table;
+
+#define MAX_CORES   16
+struct rte_hash * flow_table[MAX_CORES];
 
 /* RX queue configuration */
 static struct rte_eth_rxconf rx_conf = {
@@ -226,10 +228,10 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 
 	int ret;
 	uint32_t *data;
-	ret = rte_hash_lookup_data(flow_table, (const void *) ethhdr->h_dest, (void **)&data);
+	ret = rte_hash_lookup_data(flow_table[i], (const void *) ethhdr->h_dest, (void **)&data);
 	if (ret >= 0) {
 		(*data)++;
-		ret = rte_hash_add_key_data(flow_table, (const void *) ethhdr->h_dest, data);
+		ret = rte_hash_add_key_data(flow_table[i], (const void *) ethhdr->h_dest, data);
         if (ret < 0) {
 			printf("Update failed for flow table\n");
 		}
@@ -239,7 +241,7 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 	} else {
         uint32_t * counter = (uint32_t *)calloc(1, sizeof(uint32_t));
         *counter = 0;
-		ret = rte_hash_add_key_data(flow_table, (const void *) ethhdr->h_dest, counter);
+		ret = rte_hash_add_key_data(flow_table[i], (const void *) ethhdr->h_dest, counter);
         if (ret < 0) {
             printf("Insertion failed for flow table\n");
 		}
@@ -327,9 +329,14 @@ int main(int argc, char ** argv) {
 
     config_ports();
 
-    params.name = "flow_monitor_tbl";
-    flow_table = rte_hash_create(&params);
-    assert(flow_table != NULL);
+    for (int i = 0; i < nb_cores; i++) {
+        // params.name = "flow_monitor_tbl";
+        char name[32];
+        sprintf(name, "flow_monitor_tbl_%d", i);
+        params.name = name;
+        flow_table[i] = rte_hash_create(&params);
+        assert(flow_table[i] != NULL);
+    }
 
     pthread_rwlockattr_t attr;
     pthread_rwlockattr_init(&attr);
