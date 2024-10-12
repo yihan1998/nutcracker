@@ -105,65 +105,79 @@ int test_create_pipe() {
 static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int port_id, struct doca_flow_pipe **pipe)
 {
 	struct doca_flow_match match;
-	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
+	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
+	struct entries_status *status;
+	int num_of_entries = 1;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
 
+	status = (struct entries_status *)calloc(1, sizeof(struct entries_status));
+
 	actions_arr[0] = &actions;
 
-	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
+	result = doca_flow_pipe_cfg_create(&pipe_cfg,  ports[port_id]);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_name(pipe_cfg, "VXLAN_ENCAP_PIPE");
+
+	result = doca_flow_pipe_cfg_set_name(pipe_cfg, "HAIRPIN_PIPE2");
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+
 	result = doca_flow_pipe_cfg_set_type(pipe_cfg, DOCA_FLOW_PIPE_BASIC);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, true);
+
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_domain(pipe_cfg, DOCA_FLOW_PIPE_DOMAIN_EGRESS);
-	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
-	}
+
 	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, NULL);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
-	}
-	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
-	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		return result;
 	}
 
-	/* forwarding traffic to the wire */
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTION_ARRAY);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	/* forwarding traffic to other port */
 	fwd.type = DOCA_FLOW_FWD_PORT;
-	fwd.port_id = port_id;
+	fwd.port_id = port_id ^ 1;
 
-	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, &hairpin_pipe[port_id]);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to create doca pipe: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set create hairpin pipe: %s\n", doca_error_get_descr(result));
+		return -1;
 	}
-destroy_pipe_cfg:
-	doca_flow_pipe_cfg_destroy(pipe_cfg);
-	return result;
+
+	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, NULL);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to hairpin pipes: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+
+	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to process entry in hairpin pipes: %s\n", doca_error_get_descr(result));
+		return -1;
+	}
+	return 0;
 }
 
 int test_create_vxlan_encap_pipe() {
