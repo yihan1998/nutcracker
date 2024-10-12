@@ -85,6 +85,7 @@ static struct rte_hash_parameters params = {
 
 #define MAX_CORES   16
 struct rte_hash * flow_table[MAX_CORES];
+__thread struct rte_hash * flow_table_lcore;
 
 /* RX queue configuration */
 static struct rte_eth_rxconf rx_conf = {
@@ -228,10 +229,10 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 
 	int ret;
 	uint32_t *data;
-	ret = rte_hash_lookup_data(flow_table[i], (const void *) ethhdr->h_dest, (void **)&data);
+	ret = rte_hash_lookup_data(flow_table_lcore, (const void *) ethhdr->h_dest, (void **)&data);
 	if (ret >= 0) {
 		(*data)++;
-		ret = rte_hash_add_key_data(flow_table[i], (const void *) ethhdr->h_dest, data);
+		ret = rte_hash_add_key_data(flow_table_lcore, (const void *) ethhdr->h_dest, data);
         if (ret < 0) {
 			printf("Update failed for flow table\n");
 		}
@@ -241,7 +242,7 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 	} else {
         uint32_t * counter = (uint32_t *)calloc(1, sizeof(uint32_t));
         *counter = 0;
-		ret = rte_hash_add_key_data(flow_table[i], (const void *) ethhdr->h_dest, counter);
+		ret = rte_hash_add_key_data(flow_table_lcore, (const void *) ethhdr->h_dest, counter);
         if (ret < 0) {
             printf("Insertion failed for flow table\n");
 		}
@@ -280,6 +281,8 @@ static int launch_one_lcore(void * args) {
     qid = lid;
 
     sec_nb_rx = sec_nb_tx = 0;
+
+    flow_table_lcore = flow_table[lid];
 
     gettimeofday(&log, NULL);
 
