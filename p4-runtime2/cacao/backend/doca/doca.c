@@ -108,14 +108,11 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg *pipe_cfg;
-	struct entries_status *status;
 	doca_error_t result;
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 	memset(&fwd, 0, sizeof(fwd));
-
-	status = (struct entries_status *)calloc(1, sizeof(struct entries_status));
 
 	actions_arr[0] = &actions;
 
