@@ -117,7 +117,7 @@ static doca_error_t add_match_pipe_entry(struct doca_flow_pipe *pipe, int id,
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
 
-	SET_MAC_ADDR(match.outer.eth.src_mac, 0xa0, 0x99, 0xc2, 0x31, 0xf7, id);
+	SET_MAC_ADDR(match.outer.eth.dst_mac, 0xa0, 0x99, 0xc2, 0x31, 0xf7, id);
 
 	result = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, status, entry);
 	if (result != DOCA_SUCCESS)
