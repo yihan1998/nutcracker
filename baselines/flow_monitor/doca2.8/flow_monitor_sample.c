@@ -201,8 +201,8 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
 	while(1) {
-#if 1
 		sleep(1);
+#if 0
 		for (port_id = 0; port_id < nb_ports; port_id++) {
 			struct doca_flow_resource_query stats;
 			result = doca_flow_resource_query_entry(entries[port_id][0], &stats);
