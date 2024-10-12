@@ -150,7 +150,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, true);
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
@@ -172,8 +172,8 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 	}
 
 	/* forwarding traffic to the wire */
-	fwd.type = DOCA_FLOW_FWD_PIPE;
-	fwd.next_pipe = rss_pipe[port_id];
+	fwd.type = DOCA_FLOW_FWD_PORT;
+	fwd.port_id = port_id;
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
 	if (result != DOCA_SUCCESS) {
