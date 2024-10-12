@@ -232,12 +232,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
 	memset(&doca_cfg, 0, sizeof(doca_cfg));
 
-	// doca_cfg.attr.name = pipe_cfg->attr.name;
-	// doca_cfg.attr.type = DOCA_FLOW_PIPE_BASIC;
-	// doca_cfg.attr.is_root = pipe_cfg->attr.is_root;
-	// doca_cfg.attr.domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
-	// doca_cfg.port = ports[port_id];
-
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
@@ -314,18 +308,11 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 					break;
 			}
 		}
-
-		// doca_cfg.match = &doca_match;
 	}
 
 	doca_actions.meta.pkt_meta = UINT32_MAX;
-	// doca_cfg.attr.nb_actions = NB_ACTIONS_ARR;
-	// doca_cfg.actions = doca_actions_arr;
-	// doca_cfg.match = &doca_match;
 
 	if (pipe_cfg->attr.nb_actions > 0) {
-		// doca_cfg.attr.nb_actions=pipe_cfg->attr.nb_actions;
-
 		/* Only have 1 action */
 		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
 			struct flow_actions* action = pipe_cfg->actions[i];
@@ -346,15 +333,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 				doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
 				doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
 				doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
-
-				// SET_MAC_ADDR(doca_actions.encap.outer.eth.src_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
-				// SET_MAC_ADDR(doca_actions.encap.outer.eth.dst_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
-				// doca_actions.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-				// doca_actions.encap.outer.ip4.src_ip = 0xffffffff;
-				// doca_actions.encap.outer.ip4.dst_ip = 0xffffffff;
-				// doca_actions.encap.outer.ip4.ttl = 0xff;
-				// doca_actions.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
-				// doca_actions.encap.tun.vxlan_tun_id = 0xffffffff;
 
 			} else {
 				memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
@@ -431,8 +409,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 #endif
 	*pipe = doca_pipe;
 
-	// printf(GREEN "[INFO]" RESET " New DOCA pipe %s created on port %d: %p\n", doca_cfg.attr.name, port_id, doca_pipe);
-
 	return DOCA_SUCCESS;
 }
 
@@ -495,14 +471,7 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 	doca_error_t result;
 
 	memset(&doca_cfg, 0, sizeof(doca_cfg));
-	// memset(&doca_fwd, 0, sizeof(doca_fwd));
 	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
-
-	// doca_cfg.attr.name = pipe_cfg->attr.name;
-	// doca_cfg.attr.type = DOCA_FLOW_PIPE_CONTROL;
-	// doca_cfg.attr.is_root = pipe_cfg->attr.is_root;
-	// doca_cfg.attr.domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
-	// doca_cfg.port = ports[port_id];
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
@@ -740,9 +709,6 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 			}
 		}
 	}
-	// doca_match.outer.udp.l4_port.dst_port = htons(1234);
-	// doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-	// doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 
 	if (actions) {
 		if (actions->meta.pkt_meta) {
@@ -761,22 +727,6 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 			doca_actions.encap.outer.udp.l4_port.dst_port = htons(actions->outer.udp.dest);
 			doca_actions.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
 			doca_actions.encap.tun.vxlan_tun_id = actions->encap.tun.vxlan_tun_id;
-		
-			// doca_be32_t encap_dst_ip_addr = BE_IPV4_ADDR(81, 81, 81, 81);
-			// doca_be32_t encap_src_ip_addr = BE_IPV4_ADDR(11, 21, 31, 41);
-			// uint8_t encap_ttl = 17;
-			// doca_be32_t encap_vxlan_tun_id = BUILD_VNI(0xadadad);
-			// uint8_t src_mac[] = {0xde, 0xaf, 0x98, 0xef, 0x05, 0x6d};
-			// uint8_t dst_mac[] = {0x10, 0x70, 0xfd, 0xc8, 0x94, 0x75};
-			// doca_actions.has_encap = true;
-			// SET_MAC_ADDR(doca_actions.encap.outer.eth.src_mac, src_mac[0], src_mac[1], src_mac[2], src_mac[3], src_mac[4], src_mac[5]);
-			// SET_MAC_ADDR(doca_actions.encap.outer.eth.dst_mac, dst_mac[0], dst_mac[1], dst_mac[2], dst_mac[3], dst_mac[4], dst_mac[5]);
-			// doca_actions.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-			// doca_actions.encap.outer.ip4.src_ip = encap_src_ip_addr;
-			// doca_actions.encap.outer.ip4.dst_ip = encap_dst_ip_addr;
-			// doca_actions.encap.outer.ip4.ttl = encap_ttl;
-			// doca_actions.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
-			// doca_actions.encap.tun.vxlan_tun_id = encap_vxlan_tun_id;			
 		} else {
 			uint8_t src_mac[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
 			uint8_t dst_mac[] = {0x10, 0x70, 0xFD, 0xC8, 0x94, 0x75};
@@ -949,20 +899,20 @@ int vxlan_encap_offloading() {
 		{
 			pr_info("Adding rules to egress_vxlan_encap_tbl_2...\n");
 			struct flow_pipe * pipe = flow_get_pipe("egress_vxlan_encap_tbl_2");
-    		// pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_encap_3", 1234);
-			for (int i = 0; i < 10; i++) {
-				pipe->swPipe.ops.add_pipe_entry(pipe, "egress_encap_3", port_id + i);
-			}
+    		pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_encap_3", 1234);
+			// for (int i = 0; i < 10; i++) {
+			// 	pipe->swPipe.ops.add_pipe_entry(pipe, "egress_encap_3", port_id + i);
+			// }
 		}
 		{
 			pr_info("Adding rules to egress_encap_3...\n");
 			struct flow_pipe * pipe = flow_get_pipe("egress_encap_3");
     		uint8_t srcMac[6] = {0xde,0xed,0xbe,0xef,0xab,0xcd};
     		uint8_t dstMac[6] = {0x10,0x70,0xfd,0xc8,0x94,0x75};
-    		// pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", srcMac, dstMac, 5678, 1234, 90);
-			for (int i = 0; i < 10; i++) {
-				pipe->swPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", dstMac, srcMac, BE_IPV4_ADDR(8,8,8,8), BE_IPV4_ADDR(1,2,3,4), 4789, port_id + i, 90);
-			}
+    		pipe->hwPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", srcMac, dstMac, 5678, 1234, 90);
+			// for (int i = 0; i < 10; i++) {
+			// 	pipe->swPipe.ops.add_pipe_entry(pipe, "egress_fwd_port_4", dstMac, srcMac, BE_IPV4_ADDR(8,8,8,8), BE_IPV4_ADDR(1,2,3,4), 4789, port_id + i, 90);
+			// }
 		}
 	}
 	return DOCA_SUCCESS;
