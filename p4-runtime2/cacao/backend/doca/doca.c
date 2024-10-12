@@ -102,6 +102,98 @@ int test_create_pipe() {
 	return result;
 }
 
+static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int port_id, struct doca_flow_pipe **pipe)
+{
+	struct doca_flow_match match;
+	struct doca_flow_match match_mask;
+	struct doca_flow_actions actions, *actions_arr[NB_ACTIONS_ARR];
+	struct doca_flow_fwd fwd;
+	struct doca_flow_pipe_cfg *pipe_cfg;
+	doca_error_t result;
+
+	memset(&match, 0, sizeof(match));
+	memset(&match_mask, 0, sizeof(match_mask));
+	memset(&actions, 0, sizeof(actions));
+	memset(&fwd, 0, sizeof(fwd));
+
+	/* match on pkt meta */
+	match_mask.meta.pkt_meta = UINT32_MAX;
+
+	/* build basic outer VXLAN encap data*/
+	actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+	actions.encap_cfg.is_l2 = true;
+	SET_MAC_ADDR(actions.encap_cfg.encap.outer.eth.src_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+	SET_MAC_ADDR(actions.encap_cfg.encap.outer.eth.dst_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+	actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+	actions.encap_cfg.encap.outer.ip4.src_ip = 0xffffffff;
+	actions.encap_cfg.encap.outer.ip4.dst_ip = 0xffffffff;
+	actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
+	actions.encap_cfg.encap.outer.ip4.flags_fragment_offset = 0xffff;
+	actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+	actions.encap_cfg.encap.outer.udp.l4_port.dst_port = RTE_BE16(DOCA_FLOW_VXLAN_DEFAULT_PORT);
+	actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
+	actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
+	actions_arr[0] = &actions;
+
+	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+	result = doca_flow_pipe_cfg_set_name(pipe_cfg, "VXLAN_ENCAP_PIPE");
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+	result = doca_flow_pipe_cfg_set_type(pipe_cfg, DOCA_FLOW_PIPE_BASIC);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, true);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+	result = doca_flow_pipe_cfg_set_domain(pipe_cfg, DOCA_FLOW_PIPE_DOMAIN_EGRESS);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, &match_mask);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+	result = doca_flow_pipe_cfg_set_actions(pipe_cfg, actions_arr, NULL, NULL, NB_ACTIONS_ARR);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+
+	/* forwarding traffic to the wire */
+	fwd.type = DOCA_FLOW_FWD_PORT;
+	fwd.port_id = port_id;
+
+	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+destroy_pipe_cfg:
+	doca_flow_pipe_cfg_destroy(pipe_cfg);
+	return result;
+}
+
+int test_create_vxlan_encap_pipe() {
+	doca_error_t result;
+	int port_id;
+	struct doca_flow_pipe *pipe;
+	for (port_id = 0; port_id < nb_ports; port_id++) {
+		result = create_vxlan_encap_pipe(ports[port_id], port_id ^ 1, &pipe);
+		if (result != DOCA_SUCCESS) {
+			printf(ESC LIGHT_RED "Failed to create vxlan encap pipe: %s\n", doca_error_get_descr(result));
+			return result;
+		}
+	}
+}
+
 int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_cfg* pipe_cfg, int port_id, struct flow_fwd* fwd, struct flow_fwd* fwd_miss) {
 #ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match doca_match;

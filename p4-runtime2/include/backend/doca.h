@@ -8,6 +8,7 @@ extern "C" {
 #include "flowPipeInternal.h"
 
 int test_create_pipe();
+int test_create_vxlan_encap_pipe();
 
 int doca_create_hw_pipe(struct flow_pipe* pipe, struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss);
 int doca_create_hw_control_pipe(struct flow_pipe* pipe, struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss);
