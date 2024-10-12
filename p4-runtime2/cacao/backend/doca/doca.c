@@ -172,8 +172,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 	}
 
 	/* forwarding traffic to the wire */
-	fwd.type = DOCA_FLOW_FWD_PORT;
-	fwd.port_id = port_id;
+	fwd.type = DOCA_FLOW_FWD_DROP;
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
 	if (result != DOCA_SUCCESS) {
@@ -193,7 +192,7 @@ int test_create_vxlan_encap_pipe() {
 	for (port_id = 0; port_id < nb_ports; port_id++) {
 		result = create_vxlan_encap_pipe(ports[port_id], port_id ^ 1, &pipe);
 		if (result != DOCA_SUCCESS) {
-			printf(ESC LIGHT_RED "Failed to create vxlan encap pipe: %s\n", doca_error_get_descr(result));
+			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create vxlan encap pipe: %s\n", doca_error_get_descr(result));
 			return result;
 		}
 	}
