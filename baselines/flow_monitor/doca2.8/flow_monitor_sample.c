@@ -142,7 +142,7 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 	struct doca_dev *dev_arr[nb_ports];
 	struct doca_flow_pipe *pipe;
 	struct entries_status status_ingress;
-	int num_of_entries_ingress = 190;
+	int num_of_entries_ingress = 1;
 	doca_error_t result;
 	int port_id;
 
@@ -173,7 +173,7 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 			return result;
 		}
 
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < num_of_entries_ingress; i++) {
 			result = add_match_pipe_entry(pipe, i, &status_ingress, &entries[port_id][i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to add entry to match pipe: %s", doca_error_get_descr(result));
