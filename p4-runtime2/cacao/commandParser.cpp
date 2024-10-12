@@ -340,7 +340,8 @@ void CommandParser::runTest(const std::vector<std::string>& args) {
 
     if (args[1] == "vxlan") {
         std::cout << "Run VXLAN offloading test..." << std::endl;
-        vxlan_encap_offloading();
+        // vxlan_encap_offloading();
+        test_create_pipe();
     }
 
     return;
