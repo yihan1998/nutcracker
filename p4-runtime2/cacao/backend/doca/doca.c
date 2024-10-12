@@ -224,8 +224,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	int num_of_entries = 1;
 	doca_error_t result;
 
-	doca_actions_arr[0] = &doca_actions;
-
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));
@@ -290,9 +288,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			switch (pipe_cfg->match->outer.l4_type_ext)
 			{
 				case FLOW_L4_TYPE_EXT_UDP:
-					/* Only set l3_type, setting dst_ip and src_ip will cause matching failure */
-					// doca_match.outer.udp.l4_port.dst_port = pipe_cfg->match->outer.udp.dest;
-					// doca_match.outer.udp.l4_port.src_port = pipe_cfg->match->outer.udp.source;
+					doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
 					break;
 
@@ -311,6 +307,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 
 	doca_actions.meta.pkt_meta = UINT32_MAX;
+	doca_actions_arr[0] = &doca_actions;
 
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
@@ -389,20 +386,20 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 	result = doca_flow_pipe_create(doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
-		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
 	}
 
 	if (doca_fwd_ptr) {
 		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 			return -1;
 		}
 
 		result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 			return -1;
 		}
 	}
