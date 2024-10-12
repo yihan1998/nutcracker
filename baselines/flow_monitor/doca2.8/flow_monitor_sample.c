@@ -171,8 +171,8 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 			return result;
 		}
 
-		for (int i = 0; i < 190; i++) {
-			struct doca_flow_pipe_entry * entry;
+		struct doca_flow_pipe_entry * entry[1];
+		for (int i = 0; i < 1; i++) {
 			result = add_match_pipe_entry(pipe, i, &status_ingress, &entry);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to add entry to match pipe: %s", doca_error_get_descr(result));
@@ -200,26 +200,15 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
 	while(1) {
-#if 0
+#if 1
 		sleep(1);
 		struct doca_flow_resource_query stats;
-		for (int port_id = 0; port_id < nb_ports; port_id++) {
-			result = doca_flow_resource_query_entry(match_entry[port_id], &stats);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Port %d failed to query match pipe entry: %s",
-								port_id, doca_error_get_descr(result));
-				return result;
-			}
-			DOCA_LOG_INFO("Port %d, match pipe entry received %lu packets", port_id, stats.counter.total_pkts);
-
-			result = doca_flow_resource_query_entry(encap_entry[port_id], &stats);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Port %d failed to query encap pipe entry: %s",
-								port_id, doca_error_get_descr(result));
-				return result;
-			}
-			DOCA_LOG_INFO("Port %d, encap pipe entry received %lu packets", port_id, stats.counter.total_pkts);
+		result = doca_flow_resource_query_entry(entries[0], &stats);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Port %d failed to query monitor pipe entry: %s", port_id, doca_error_get_descr(result));
+			return result;
 		}
+		DOCA_LOG_INFO("Port %d, monitor pipe entry received %lu packets", port_id, stats.counter.total_pkts);
 #endif	/* ENABLE_COUNTER */
 	}
 
