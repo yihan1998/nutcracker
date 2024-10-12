@@ -90,7 +90,7 @@ int test_create_pipe() {
 	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, NB_ACTIONS_ARR);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
-		goto destroy_pipe_cfg;
+		return result;
 	}
 	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
