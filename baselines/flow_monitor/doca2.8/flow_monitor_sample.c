@@ -57,6 +57,9 @@ static doca_error_t create_match_pipe(struct doca_flow_port *port, int port_id, 
 
 	/* 5 tuple match */
 	SET_MAC_ADDR(match.outer.eth.dst_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+
+	actions_arr[0] = &actions;
+
 	counter.counter_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
 
 	result = doca_flow_pipe_cfg_create(&pipe_cfg, port);
