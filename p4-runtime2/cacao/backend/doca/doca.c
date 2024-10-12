@@ -384,10 +384,18 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
 
+	if (0) {
 	result = doca_flow_pipe_create(doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
+	}
+	} else {
+	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+		return result;
+	}
 	}
 
 	if (doca_fwd_ptr) {
