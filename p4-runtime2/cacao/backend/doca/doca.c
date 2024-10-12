@@ -53,16 +53,13 @@ int test_create_pipe() {
 
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
-	memset(&doca_fwd, 0, sizeof(doca_fwd));
-	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
-	memset(&doca_cfg, 0, sizeof(doca_cfg));
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_name(doca_cfg, pipe_cfg->attr.name);
+	result = doca_flow_pipe_cfg_set_name(doca_cfg, "egress_encap_3");
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
 		return result;
@@ -283,7 +280,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));
 	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
-	memset(&doca_cfg, 0, sizeof(doca_cfg));
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
