@@ -1,0 +1,10 @@
+"^https?://(www\\.)?google\\.com/?$",
+"^https?://(drive|www)\\.google\\.com/.*$",
+"^https?://(docs|www)\\.google\\.com/.*$",
+"^https?://(mail|www)\\.google\\.com/.*$",
+"^https?://(maps|www)\\.google\\.com/.*$",
+"^https?://(www)\\.youtube\\.com/.*$",
+"^https?://(cloud|www)\\.google\\.com/.*$",
+"^https?://(calendar|www)\\.google\\.com/.*$",
+"^https?://(photos|www)\\.google\\.com/.*$",
+"^https?://(play|www)\\.google\\.com/.*$"
