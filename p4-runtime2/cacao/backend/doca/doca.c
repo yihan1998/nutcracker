@@ -172,7 +172,8 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 	}
 
 	/* forwarding traffic to the wire */
-	fwd.type = DOCA_FLOW_FWD_DROP;
+	fwd.type = DOCA_FLOW_FWD_PORT;
+	fwd.port_id = port_id;
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
 	if (result != DOCA_SUCCESS) {
