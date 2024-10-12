@@ -184,6 +184,7 @@ destroy_pipe_cfg:
 int test_create_vxlan_encap_pipe() {
 	doca_error_t result;
 	int port_id;
+	int nb_ports = 2;
 	struct doca_flow_pipe *pipe;
 	for (port_id = 0; port_id < nb_ports; port_id++) {
 		result = create_vxlan_encap_pipe(ports[port_id], port_id ^ 1, &pipe);
@@ -192,6 +193,7 @@ int test_create_vxlan_encap_pipe() {
 			return result;
 		}
 	}
+	return 0;
 }
 
 int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_cfg* pipe_cfg, int port_id, struct flow_fwd* fwd, struct flow_fwd* fwd_miss) {
