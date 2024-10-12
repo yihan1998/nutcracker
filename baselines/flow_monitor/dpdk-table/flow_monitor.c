@@ -233,6 +233,9 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
         if (ret < 0) {
 			printf("Update failed for flow table\n");
 		}
+        printf("DST MAC: %02x:%02x:%02x:%02x:%02x:%02x, Counter %d\n", 
+            ethhdr->h_dest[0], ethhdr->h_dest[1], ethhdr->h_dest[2],
+            ethhdr->h_dest[3], ethhdr->h_dest[4], ethhdr->h_dest[5], (*data));
 	} else {
         uint32_t * counter = (uint32_t *)calloc(1, sizeof(uint32_t));
         *counter = 0;
@@ -240,6 +243,9 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
         if (ret < 0) {
             printf("Insertion failed for flow table\n");
 		}
+        printf("Add new DST MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", 
+            ethhdr->h_dest[0], ethhdr->h_dest[1], ethhdr->h_dest[2],
+            ethhdr->h_dest[3], ethhdr->h_dest[4], ethhdr->h_dest[5]);
     }
 
     return 0;
