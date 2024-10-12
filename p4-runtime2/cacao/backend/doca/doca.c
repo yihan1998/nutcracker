@@ -58,38 +58,38 @@ int test_create_pipe() {
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 	result = doca_flow_pipe_cfg_set_name(doca_cfg, "egress_encap_3");
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 	result = doca_flow_pipe_cfg_set_type(doca_cfg, DOCA_FLOW_PIPE_BASIC);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 	result = doca_flow_pipe_cfg_set_is_root(doca_cfg, true);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 	result = doca_flow_pipe_cfg_set_domain(doca_cfg, DOCA_FLOW_PIPE_DOMAIN_EGRESS);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, NB_ACTIONS_ARR);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg actions: %s", doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
 		goto destroy_pipe_cfg;
 	}
 	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
