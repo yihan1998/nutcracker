@@ -160,6 +160,8 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 		return result;
 	}
 
+	struct doca_flow_pipe_entry * entries[1];
+
 	for (port_id = 0; port_id < nb_ports; port_id++) {
 		memset(&status_ingress, 0, sizeof(status_ingress));
 
@@ -171,7 +173,6 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 			return result;
 		}
 
-		struct doca_flow_pipe_entry * entries[1];
 		for (int i = 0; i < 1; i++) {
 			result = add_match_pipe_entry(pipe, i, &status_ingress, &entries[i]);
 			if (result != DOCA_SUCCESS) {
@@ -200,6 +201,7 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
 	while(1) {
+#if 1
 		sleep(1);
 		struct doca_flow_resource_query stats;
 		result = doca_flow_resource_query_entry(entries[0], &stats);
