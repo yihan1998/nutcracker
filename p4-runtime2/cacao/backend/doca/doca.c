@@ -54,6 +54,8 @@ int test_create_pipe() {
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
 
+	doca_actions_arr[0] = &doca_actions;
+
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
@@ -85,13 +87,18 @@ int test_create_pipe() {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, NB_ACTIONS_ARR);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set doca_flow_pipe_cfg actions: %s", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
 	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
 	}
 
-	doca_flow_pipe_cfg_destroy(pipe_cfg);
+	doca_flow_pipe_cfg_destroy(doca_cfg);
 	return result;
 }
 
