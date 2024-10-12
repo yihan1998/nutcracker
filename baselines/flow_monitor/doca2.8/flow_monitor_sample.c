@@ -159,7 +159,6 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 
 	for (port_id = 0; port_id < nb_ports; port_id++) {
 		memset(&status_ingress, 0, sizeof(status_ingress));
-		memset(&status_egress, 0, sizeof(status_egress));
 
 		result = create_match_pipe(ports[port_id], port_id, &pipe);
 		if (result != DOCA_SUCCESS) {
