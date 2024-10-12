@@ -176,6 +176,10 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 	fwd.port_id = port_id;
 
 	result = doca_flow_pipe_create(pipe_cfg, &fwd, NULL, pipe);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to create doca pipe: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
 destroy_pipe_cfg:
 	doca_flow_pipe_cfg_destroy(pipe_cfg);
 	return result;
