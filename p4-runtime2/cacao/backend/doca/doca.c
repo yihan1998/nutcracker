@@ -150,7 +150,7 @@ static doca_error_t create_vxlan_encap_pipe(struct doca_flow_port *port, int por
 		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, false);
+	result = doca_flow_pipe_cfg_set_is_root(pipe_cfg, true);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
