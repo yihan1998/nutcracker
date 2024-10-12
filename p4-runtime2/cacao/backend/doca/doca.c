@@ -884,7 +884,7 @@ int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, str
 }
 
 int vxlan_encap_offloading() {
-	int port_id = 1234;
+	// int port_id = 1234;
 	/* Add ingress */
 	// if (1) {
 	// 	struct flow_pipe * pipe = flow_get_pipe("ingress_udp_tbl_0");
