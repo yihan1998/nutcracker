@@ -172,7 +172,7 @@ int test_create_vxlan_encap_pipe() {
 	int nb_ports = 2;
 	struct doca_flow_pipe *pipe;
 	for (port_id = 0; port_id < nb_ports; port_id++) {
-		result = create_vxlan_encap_pipe(ports[port_id], port_id ^ 1, &pipe);
+		result = create_vxlan_encap_pipe(ports[port_id], port_id, &pipe);
 		if (result != DOCA_SUCCESS) {
 			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create vxlan encap pipe: %s\n", doca_error_get_descr(result));
 			return result;
