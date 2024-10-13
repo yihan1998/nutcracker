@@ -332,6 +332,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
+#if 0
 	if (pipe_cfg->match) {
 		/* Set match.meta */
 		// doca_match.meta.pkt_meta = pipe_cfg->match->meta.pkt_meta;
@@ -363,39 +364,39 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			}
 		}
 	}
-
+#endif
 	doca_actions.meta.pkt_meta = UINT32_MAX;
 	doca_actions_arr[0] = &doca_actions;
-
+#if 0
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
-		// for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
-		// 	struct flow_actions* action = pipe_cfg->actions[i];
-		// 	if (action->meta.pkt_meta) {
-		// 		doca_actions.meta.pkt_meta = action->meta.pkt_meta;
-		// 	}
-		// 	if (action->has_encap) {
-        //     	doca_actions.encap_cfg.is_l2 = true;
-        //     	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
-		// 		memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
-		// 		memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
-		// 		doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-		// 		doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
-		// 		doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
-		// 		doca_actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
-		// 		doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-		// 		doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(action->outer.udp.source);
-		// 		doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
-		// 		doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
-		// 		doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
+		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
+			struct flow_actions* action = pipe_cfg->actions[i];
+			if (action->meta.pkt_meta) {
+				doca_actions.meta.pkt_meta = action->meta.pkt_meta;
+			}
+			if (action->has_encap) {
+            	doca_actions.encap_cfg.is_l2 = true;
+            	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+				doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+				doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
+				doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
+				doca_actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
+				doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+				doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(action->outer.udp.source);
+				doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
+				doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
+				doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
 
-		// 	} else {
-		// 		memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
-		// 		memcpy(doca_actions.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
-		// 	}
-		// }
+			} else {
+				memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+				memcpy(doca_actions.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+			}
+		}
 	}
-
+#endif
 	/* Set fwd */
 	if (fwd) {
 		if (fwd->type == FLOW_FWD_RSS) {
