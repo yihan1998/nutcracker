@@ -416,7 +416,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			printf("Unknown fwd type! (%d)\n", fwd->type);
 		}
 	} else {
-		doca_fwd.type = DOCA_FLOW_FWD_CHANGEABLE};
+		doca_fwd.type = DOCA_FLOW_FWD_CHANGEABLE;
 	}
 
 	/* Set fwd_miss */
