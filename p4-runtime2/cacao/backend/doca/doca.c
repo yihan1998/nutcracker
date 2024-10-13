@@ -519,11 +519,15 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		/* Set outer */
 		if (pipe_cfg->match->outer.l3_type == FLOW_L3_TYPE_IP4) {
 			doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
-			doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+			/* If you set up l3_type as IP4, you need to specify5 the mask field too */
+			// doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 			switch (pipe_cfg->match->outer.l4_type_ext)
 			{
 				case FLOW_L4_TYPE_EXT_UDP:
-					// doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
+					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					doca_match.outer.udp.l4_port.src_port = pipe_cfg->match->outer.udp.dest;
+					doca_match.outer.udp.l4_port.dst_port = pipe_cfg->match->outer.udp.dest;
 					break;
 
 				case FLOW_L4_TYPE_EXT_TCP:
