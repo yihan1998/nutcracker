@@ -288,7 +288,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));
-	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
+	// memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
 
 	doca_actions_arr[0] = &doca_actions;
 
