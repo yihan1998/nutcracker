@@ -315,6 +315,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
+#if 0
     enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
 
 	result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
@@ -322,6 +323,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+#endif
 #if 0
 	if (pipe_cfg->match) {
 		/* Set match.meta */
@@ -442,7 +444,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
 
-	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, doca_fwd_miss_ptr, &doca_pipe);
+	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
