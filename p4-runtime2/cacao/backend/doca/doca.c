@@ -759,7 +759,7 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
 
-	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, pipe);
+	result = doca_flow_pipe_create(doca_cfg, NULL, doca_fwd_miss_ptr, pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return -1;
