@@ -518,6 +518,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		// doca_match.outer.eth.type = pipe_cfg->match->outer.eth.h_proto;
 		/* Set outer */
 		if (pipe_cfg->match->outer.l3_type == FLOW_L3_TYPE_IP4) {
+			doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 			doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
 			switch (pipe_cfg->match->outer.l4_type_ext)
 			{
