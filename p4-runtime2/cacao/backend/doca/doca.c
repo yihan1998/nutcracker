@@ -274,7 +274,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 #elif CONFIG_BLUEFIELD3
     struct doca_flow_match doca_match;
-	struct doca_flow_fwd doca_fwd, doca_fwd_miss *doca_fwd_miss_ptr = NULL;
+	struct doca_flow_fwd doca_fwd, doca_fwd_miss, *doca_fwd_miss_ptr = NULL;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
