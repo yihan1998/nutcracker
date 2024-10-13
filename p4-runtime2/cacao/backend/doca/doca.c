@@ -171,6 +171,10 @@ int create_control_pipe()
 	}
 
 	result = doca_flow_pipe_create(pipe_cfg, NULL, NULL, &control_pipe);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe: %s\n", doca_error_get_descr(result));
+		return result;
+	}
 
 	result = add_control_pipe_entries(control_pipe, port_id);
 	if (result != DOCA_SUCCESS) {
