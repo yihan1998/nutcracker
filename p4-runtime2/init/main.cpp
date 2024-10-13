@@ -175,6 +175,9 @@ int main(int argc, char **argv) {
     set_open_fd(1);
     set_open_fd(2);
 
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    
 	pr_info("init: initializing worker threads...\n");
     worker_init();
 
@@ -210,9 +213,9 @@ int main(int argc, char **argv) {
         i++;
     }
 
-	printf("Test creating root conditional pipe >> \n");
-    create_control_pipe();
-    
+	// printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    // create_control_pipe();
+
     /* Launch per-lcore init on every lcore */
 	rte_eal_mp_remote_launch(lcore_main, args, CALL_MAIN);
 	rte_eal_mp_wait_lcore();
