@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
     doca_init();
     docadv_init();
 #endif  /* CONFIG_DOCA */
-    if (1)
+    if (0)
     {
 	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
     create_control_pipe();
@@ -187,6 +187,12 @@ int main(int argc, char **argv) {
 
     pr_info("init: initializing fs...\n");
 	fs_init();
+
+    if (0)
+    {
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    }
 
     /* Reserve 0, 1, and 2 for stdin, stdout, and stderr */
     set_open_fd(0);
