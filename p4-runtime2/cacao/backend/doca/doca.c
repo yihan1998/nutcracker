@@ -900,8 +900,9 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 	doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
 
-	doca_fwd.type = DOCA_FLOW_FWD_PIPE;
-	doca_fwd.next_pipe = rss_pipe[port_id];
+	// doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+	// doca_fwd.next_pipe = rss_pipe[port_id];
+	doca_fwd.type = DOCA_FLOW_FWD_DROP;
 
 	result = doca_flow_pipe_control_add_entry(0,
 						  doca_priority,
