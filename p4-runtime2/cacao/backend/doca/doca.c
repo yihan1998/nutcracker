@@ -369,31 +369,31 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
-		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
-			struct flow_actions* action = pipe_cfg->actions[i];
-			if (action->meta.pkt_meta) {
-				doca_actions.meta.pkt_meta = action->meta.pkt_meta;
-			}
-			if (action->has_encap) {
-            	doca_actions.encap_cfg.is_l2 = true;
-            	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
-				memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
-				memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
-				doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-				doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
-				doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
-				doca_actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
-				doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-				doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(action->outer.udp.source);
-				doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
-				doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
-				doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
+		// for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
+		// 	struct flow_actions* action = pipe_cfg->actions[i];
+		// 	if (action->meta.pkt_meta) {
+		// 		doca_actions.meta.pkt_meta = action->meta.pkt_meta;
+		// 	}
+		// 	if (action->has_encap) {
+        //     	doca_actions.encap_cfg.is_l2 = true;
+        //     	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+		// 		memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+		// 		memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+		// 		doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+		// 		doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
+		// 		doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
+		// 		doca_actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
+		// 		doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+		// 		doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(action->outer.udp.source);
+		// 		doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
+		// 		doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
+		// 		doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
 
-			} else {
-				memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
-				memcpy(doca_actions.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
-			}
-		}
+		// 	} else {
+		// 		memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+		// 		memcpy(doca_actions.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+		// 	}
+		// }
 	}
 
 	/* Set fwd */
@@ -442,18 +442,10 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
 
-	if (0) {
 	result = doca_flow_pipe_create(doca_cfg, doca_fwd_ptr, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
-	}
-	} else {
-	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
-	if (result != DOCA_SUCCESS) {
-		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-		return result;
-	}
 	}
 
 	if (doca_fwd_ptr) {
