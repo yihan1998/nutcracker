@@ -406,7 +406,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
 		} else if (fwd->type == FLOW_FWD_PORT) {
 			doca_fwd.port_id = port_id;
-			doca_fwd.type = DOCA_FLOW_FWD_PORT;
+			doca_fwd.type = DOCA_FLOW_FWD_PIPI;
 		} else if (fwd->type == FLOW_FWD_PIPE) {
 			doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
 			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
@@ -428,7 +428,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			doca_fwd_miss.next_pipe = hairpin_pipe[port_id];
 			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
 		} else if (fwd_miss->type == FLOW_FWD_PORT) {
-			doca_fwd_miss.port_id = port_id;
+			doca_fwd_miss.next_pipe = port_pipe[port_id];;
 			doca_fwd_miss.type = DOCA_FLOW_FWD_PORT;
 		} else if (fwd_miss->type == FLOW_FWD_PIPE) {
 			doca_fwd_miss.next_pipe = fwd_miss->next_pipe->hwPipe.pipe[port_id];
