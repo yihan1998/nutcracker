@@ -47,7 +47,7 @@ void signal_handler(int sig) {
         case SIGINT:
             pr_info("Caught SIGINT! Terminating...\n");
             pr_info("Goodbye!\n");
-            stop_doca_flow_ports();
+            // stop_doca_flow_ports();
             exit(1);
             break;
         default:
