@@ -699,12 +699,12 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 	}
 #elif CONFIG_BLUEFIELD3
     struct doca_flow_pipe_cfg *doca_cfg;
-	// struct doca_flow_fwd doca_fwd_miss;
-	// struct doca_flow_fwd *doca_fwd_miss_ptr = NULL;
+	struct doca_flow_fwd doca_fwd_miss;
+	struct doca_flow_fwd *doca_fwd_miss_ptr = NULL;
 	doca_error_t result;
 
 	memset(&doca_cfg, 0, sizeof(doca_cfg));
-	// memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
+	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
@@ -737,7 +737,7 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-#if 0
+
 	// /* Set fwd_miss */
 	if (fwd_miss) {
 		if (fwd_miss->type == FLOW_FWD_RSS) {
@@ -758,7 +758,7 @@ int doca_create_hw_control_pipe_for_port(int port_id, struct doca_flow_pipe **pi
 
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
-#endif
+
 	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
@@ -888,6 +888,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 		return -1;
 	}
 #else
+	printf("Adding entry into conditional pipe...\n");
 	struct doca_flow_match doca_match;
 	struct doca_flow_fwd doca_fwd;
 	uint8_t doca_priority = 0;
