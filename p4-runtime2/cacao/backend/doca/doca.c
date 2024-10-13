@@ -522,8 +522,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			switch (pipe_cfg->match->outer.l4_type_ext)
 			{
 				case FLOW_L4_TYPE_EXT_UDP:
-					doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
-					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					// doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
 					break;
 
 				case FLOW_L4_TYPE_EXT_TCP:
