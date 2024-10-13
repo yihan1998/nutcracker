@@ -43,7 +43,7 @@ doca_error_t init_buf(struct doca_dev * dev, struct doca_buf_inventory * buf_inv
 #define MAX_PORTS   (2)
 
 extern struct doca_flow_port *ports[MAX_PORTS];
-extern struct doca_flow_pipe *rss_pipe[2], *hairpin_pipe[2];
+extern struct doca_flow_pipe *rss_pipe[2], *hairpin_pipe[2], *port_pipe[2];
 
 int doca_init();
 
