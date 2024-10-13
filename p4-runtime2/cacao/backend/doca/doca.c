@@ -467,10 +467,13 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
+	struct doca_flow_fwd fwd;
 	doca_error_t result;
 
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
+	memset(&fwd, 0, sizeof(fwd));
+
 	doca_actions_arr[0] = &doca_actions;
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
@@ -478,6 +481,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create doca_flow_pipe_cfg: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+	printf("Creating pipe %s...\n", pipe_cfg->attr.name);
     result = doca_flow_pipe_cfg_set_name(doca_cfg, pipe_cfg->attr.name);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
@@ -488,19 +492,20 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+	printf("Setting pipe %s to root? %s...\n", pipe_cfg->attr.name, (pipe_cfg->attr.is_root)? "TRUE" : "FALSE");
 	result = doca_flow_pipe_cfg_set_is_root(doca_cfg, pipe_cfg->attr.is_root);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
 	}
 
-    // enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
+    enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
 
-	// result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
-	// if (result != DOCA_SUCCESS) {
-	// 	printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
-	// 	return result;
-	// }
+	result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+		return result;
+	}
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
@@ -512,7 +517,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
+	fwd.type = DOCA_FLOW_FWD_DROP;
+
+	result = doca_flow_pipe_create(doca_cfg, &fwd, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create doca pipe: %s\n", doca_error_get_descr(result));
 		return result;
