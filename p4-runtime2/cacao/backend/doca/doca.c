@@ -275,8 +275,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 #elif CONFIG_BLUEFIELD3
 #if 1
     struct doca_flow_match doca_match;
-	// struct doca_flow_fwd doca_fwd, doca_fwd_miss, *doca_fwd_miss_ptr = NULL;
-	struct doca_flow_fwd doca_fwd;
+	struct doca_flow_fwd doca_fwd, doca_fwd_miss, *doca_fwd_miss_ptr = NULL;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
@@ -423,7 +422,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 
 	/* Set fwd_miss */
-#if 0
 	if (fwd_miss) {
 		if (fwd_miss->type == FLOW_FWD_RSS) {
 			doca_fwd_miss.next_pipe = rss_pipe[port_id];
@@ -445,9 +443,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
-#endif
 
-	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
+	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, doca_fwd_miss_ptr, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
