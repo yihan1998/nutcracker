@@ -144,13 +144,21 @@ int main(int argc, char **argv) {
     doca_init();
     docadv_init();
 #endif  /* CONFIG_DOCA */
-
+    if (1)
+    {
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    }
     /* Register termination handling callback */
     signal(SIGINT, signal_handler);
 
     pr_info("init: starting JIT...\n");
     jit_init();
-    
+    if (0)
+    {
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    }
     pipe(pipeFds);
 
     int flags = fcntl(pipeFds[0], F_GETFL, 0);
@@ -164,8 +172,18 @@ int main(int argc, char **argv) {
     // DPDK thread
     // std::thread dpdk(dpdkThread, std::ref(netStats), pipeFds[0]);
     // dpdk.join();
-
+    if (0)
+    {
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    }
     kernel_early_boot = false;
+
+    if (0)
+    {
+	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
+    create_control_pipe();
+    }
 
     pr_info("init: initializing fs...\n");
 	fs_init();
@@ -175,9 +193,6 @@ int main(int argc, char **argv) {
     set_open_fd(1);
     set_open_fd(2);
 
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    
 	pr_info("init: initializing worker threads...\n");
     worker_init();
 
