@@ -888,31 +888,31 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 		return -1;
 	}
 #else
-	struct doca_flow_match match;
-	struct doca_flow_fwd fwd;
-	uint8_t priority = 0;
+	struct doca_flow_match doca_match;
+	struct doca_flow_fwd doca_fwd;
+	uint8_t doca_priority = 0;
 	doca_error_t result;
 
-	memset(&match, 0, sizeof(match));
-	memset(&fwd, 0, sizeof(fwd));
+	memset(&doca_match, 0, sizeof(doca_match));
+	memset(&doca_fwd, 0, sizeof(doca_fwd));
 
-	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
-	match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
+	doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
+	doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
 
-	fwd.type = DOCA_FLOW_FWD_PIPE;
-	fwd.next_pipe = rss_pipe[port_id];
+	doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+	doca_fwd.next_pipe = rss_pipe[port_id];
 
 	result = doca_flow_pipe_control_add_entry(0,
-						  priority,
+						  doca_priority,
 						  pipe,
-						  &match,
+						  &doca_match,
 						  NULL,
 						  NULL,
 						  NULL,
 						  NULL,
 						  NULL,
 						  NULL,
-						  &fwd,
+						  &doca_fwd,
 						  NULL,
 						  NULL);
 	if (result != DOCA_SUCCESS) {
