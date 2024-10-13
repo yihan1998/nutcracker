@@ -442,6 +442,12 @@ int build_port_pipe(uint16_t port_id) {
 		return result;
 	}
 
+	result = doca_flow_pipe_cfg_set_domain(pipe_cfg, DOCA_FLOW_PIPE_DOMAIN_EGRESS);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+		goto destroy_pipe_cfg;
+	}
+
 	result = doca_flow_pipe_cfg_set_match(pipe_cfg, &match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
