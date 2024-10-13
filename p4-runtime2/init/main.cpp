@@ -98,8 +98,8 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #endif
-	printf("Test creating root conditional pipe >> \n");
-    create_control_pipe();
+	// printf("Test creating root conditional pipe >> \n");
+    // create_control_pipe();
 
     while (1) {
         ipc_poll();
@@ -210,6 +210,9 @@ int main(int argc, char **argv) {
         i++;
     }
 
+	printf("Test creating root conditional pipe >> \n");
+    create_control_pipe();
+    
     /* Launch per-lcore init on every lcore */
 	rte_eal_mp_remote_launch(lcore_main, args, CALL_MAIN);
 	rte_eal_mp_wait_lcore();
