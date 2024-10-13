@@ -423,6 +423,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 
 	/* Set fwd_miss */
+#if 0
 	if (fwd_miss) {
 		if (fwd_miss->type == FLOW_FWD_RSS) {
 			doca_fwd_miss.next_pipe = rss_pipe[port_id];
@@ -444,6 +445,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 
 		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
+#endif
 
 	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
