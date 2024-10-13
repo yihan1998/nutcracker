@@ -464,13 +464,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 #endif
 	struct doca_flow_match doca_match;
-	struct doca_flow_fwd doca_fwd, doca_fwd_miss, * doca_fwd_ptr = NULL, *doca_fwd_miss_ptr = NULL;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
-	struct doca_flow_pipe_entry *entry;
-	struct entries_status status = {0};
-	int num_of_entries = 1;
 	doca_error_t result;
 
 	memset(&doca_match, 0, sizeof(doca_match));
@@ -516,7 +512,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-	result = doca_flow_pipe_create(pipe_cfg, NULL, NULL, pipe);
+	result = doca_flow_pipe_create(doca_cfg, NULL, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
 		return result;
