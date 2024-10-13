@@ -529,6 +529,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 #endif
+#endif
 	*pipe = doca_pipe;
 
 	return DOCA_SUCCESS;
