@@ -315,13 +315,12 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-    enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
-
-	printf("Creating pipe %s in %s...\n", pipe_cfg->attr.name, (domain == DOCA_FLOW_PIPE_DOMAIN_DEFAULT)? "INGRESS" : "EGRESS");
-	result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
-	if (result != DOCA_SUCCESS) {
-		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
-		return result;
+    if (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS) {
+		result = doca_flow_pipe_cfg_set_domain(doca_cfg, DOCA_FLOW_PIPE_DOMAIN_EGRESS);
+		if (result != DOCA_SUCCESS) {
+			printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
+			return result;
+		}
 	}
 
 #if 0
