@@ -466,6 +466,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 #else
 	struct doca_flow_match doca_match;
 	struct doca_flow_fwd doca_fwd;
+	struct doca_flow_fwd doca_fwd_miss, *doca_fwd_miss_ptr = NULL;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
@@ -539,6 +540,29 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		}
 	} else {
 		doca_fwd.type = DOCA_FLOW_FWD_CHANGEABLE;
+	}
+
+	/* Set fwd_miss */
+	if (fwd_miss) {
+		if (fwd_miss->type == FLOW_FWD_RSS) {
+			doca_fwd_miss.next_pipe = rss_pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd_miss->type == FLOW_FWD_HAIRPIN) {
+			doca_fwd_miss.next_pipe = hairpin_pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd_miss->type == FLOW_FWD_PORT) {
+			doca_fwd_miss.next_pipe = port_pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PORT;
+		} else if (fwd_miss->type == FLOW_FWD_PIPE) {
+			doca_fwd_miss.next_pipe = fwd_miss->next_pipe->hwPipe.pipe[port_id];
+			doca_fwd_miss.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd_miss->type == FLOW_FWD_DROP) {
+			doca_fwd_miss.type = DOCA_FLOW_FWD_DROP;
+		} else {
+			printf("Unknown fwd miss type! (%d)\n", fwd_miss->type);
+		}
+
+		doca_fwd_miss_ptr = &doca_fwd_miss;
 	}
 
 	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
