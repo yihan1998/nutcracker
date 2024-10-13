@@ -787,6 +787,9 @@ int doca_init(void) {
 	}
 #endif
 
+	printf("Test creating root conditional pipe >> \n");
+    create_control_pipe();
+
 	for (int port_id = 0; port_id < dpdk_config.port_config.nb_ports; port_id++) {
 		printf(ESC GREEN "[INFO]" RESET " Build hairpin pipe on port %d => ", port_id);
 		result = build_hairpin_pipe(port_id);
