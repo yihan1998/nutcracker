@@ -508,11 +508,73 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
+	if (pipe_cfg->match) {
+		/* Set match.meta */
+		// doca_match.meta.pkt_meta = pipe_cfg->match->meta.pkt_meta;
+		// memcpy(doca_match.meta.u32, pipe_cfg->match->meta.u32, 4 * sizeof(uint32_t));
+
+		// memcpy(doca_match.outer.eth.src_mac, pipe_cfg->match->outer.eth.h_source, 6);
+		// memcpy(doca_match.outer.eth.dst_mac, pipe_cfg->match->outer.eth.h_dest, 6);
+		// doca_match.outer.eth.type = pipe_cfg->match->outer.eth.h_proto;
+		/* Set outer */
+		if (pipe_cfg->match->outer.l3_type == FLOW_L3_TYPE_IP4) {
+			doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+			switch (pipe_cfg->match->outer.l4_type_ext)
+			{
+				case FLOW_L4_TYPE_EXT_UDP:
+					doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					break;
+
+				case FLOW_L4_TYPE_EXT_TCP:
+					doca_match.outer.ip4.dst_ip = pipe_cfg->match->outer.ip4.daddr;
+					doca_match.outer.ip4.src_ip = pipe_cfg->match->outer.ip4.saddr;
+					doca_match.outer.tcp.l4_port.dst_port = pipe_cfg->match->outer.tcp.dest;
+					doca_match.outer.tcp.l4_port.src_port = pipe_cfg->match->outer.tcp.source;
+					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_TCP;
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		return result;
 	}
+
+	if (pipe_cfg->attr.nb_actions > 0) {
+		/* Only have 1 action */
+		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
+			struct flow_actions* action = pipe_cfg->actions[i];
+			if (action->meta.pkt_meta) {
+				doca_actions.meta.pkt_meta = action->meta.pkt_meta;
+			}
+			if (action->has_encap) {
+            	doca_actions.encap_cfg.is_l2 = true;
+            	doca_actions.encap_type = DOCA_FLOW_RESOURCE_TYPE_NON_SHARED;
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+				memcpy(doca_actions.encap_cfg.encap.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+				doca_actions.encap_cfg.encap.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+				doca_actions.encap_cfg.encap.outer.ip4.src_ip = htonl(action->outer.ip4.saddr);
+				doca_actions.encap_cfg.encap.outer.ip4.dst_ip = htonl(action->outer.ip4.daddr);
+				doca_actions.encap_cfg.encap.outer.ip4.ttl = 0xff;
+				doca_actions.encap_cfg.encap.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+				doca_actions.encap_cfg.encap.outer.udp.l4_port.src_port = htons(action->outer.udp.source);
+				doca_actions.encap_cfg.encap.outer.udp.l4_port.dst_port = htons(action->outer.udp.dest);
+				doca_actions.encap_cfg.encap.tun.type = DOCA_FLOW_TUN_VXLAN;
+				doca_actions.encap_cfg.encap.tun.vxlan_tun_id = 0xffffffff;
+
+			} else {
+				memcpy(doca_actions.outer.eth.src_mac, action->outer.eth.h_source, ETH_ALEN);
+				memcpy(doca_actions.outer.eth.dst_mac, action->outer.eth.h_dest, ETH_ALEN);
+			}
+		}
+	}
+
 	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, 1);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
