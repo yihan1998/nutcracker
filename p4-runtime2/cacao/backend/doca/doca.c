@@ -102,6 +102,86 @@ int test_create_pipe() {
 	return result;
 }
 
+static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe, int port_id)
+{
+	struct doca_flow_match match;
+	struct doca_flow_fwd fwd;
+	uint8_t priority = 0;
+	doca_error_t result;
+	int num_of_entries = 1;
+
+	memset(&match, 0, sizeof(match));
+	memset(&fwd, 0, sizeof(fwd));
+
+	match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
+	match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
+
+	fwd.type = DOCA_FLOW_FWD_PIPE;
+	fwd.next_pipe = rss_pipe[p];
+
+	result = doca_flow_pipe_control_add_entry(0,
+						  priority,
+						  control_pipe,
+						  &match,
+						  NULL,
+						  NULL,
+						  NULL,
+						  NULL,
+						  NULL,
+						  NULL,
+						  &fwd,
+						  status,
+						  NULL);
+	if (result != DOCA_SUCCESS) {
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add control pipe entry: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	return DOCA_SUCCESS;
+}
+
+int create_control_pipe()
+{
+	int port_id = 0;
+	struct doca_flow_pipe_cfg *pipe_cfg;
+	doca_error_t result;
+
+	result = doca_flow_pipe_cfg_create(&pipe_cfg, ports[port_id]);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create doca_flow_pipe_cfg: %s", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_name(doca_cfg, "CONTROL_PIPE");
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg name: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_type(doca_cfg, DOCA_FLOW_PIPE_CONTROL);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg type: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_cfg_set_is_root(doca_cfg, true);
+	if (result != DOCA_SUCCESS) {
+		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
+		return result;
+	}
+
+	result = doca_flow_pipe_create(pipe_cfg, NULL, NULL, pipe);
+
+	result = add_control_pipe_entries(control_pipe, port_id);
+	if (result != DOCA_SUCCESS) {
+		stop_doca_flow_ports(nb_ports, ports);
+		doca_flow_destroy();
+		return result;
+	}
+
+	return result;
+}
+
 int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_cfg* pipe_cfg, int port_id, struct flow_fwd* fwd, struct flow_fwd* fwd_miss) {
 #ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match doca_match;

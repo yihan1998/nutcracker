@@ -72,6 +72,7 @@ void dpdkThread(int readFd) {
 
 int run_control_plane(int readFd) {
     CommandParser parser;
+#if 0
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
@@ -96,6 +97,8 @@ int run_control_plane(int readFd) {
         input.push_back(test_input);
         parser.runTest(input);
     }
+#endif
+    create_control_pipe();
 
     while (1) {
         ipc_poll();

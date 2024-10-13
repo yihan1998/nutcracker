@@ -47,6 +47,7 @@ extern struct doca_flow_pipe *rss_pipe[2], *hairpin_pipe[2], *port_pipe[2];
 
 int doca_init();
 int stop_doca_flow_ports();
+int create_control_pipe();
 
 #ifdef __cplusplus
 } /* extern "C" */
