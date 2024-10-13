@@ -518,7 +518,29 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-	doca_fwd.type = DOCA_FLOW_FWD_CHANGEABLE;
+	/* Set fwd */
+	if (fwd) {
+		if (fwd->type == FLOW_FWD_RSS) {
+			doca_fwd.next_pipe = rss_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_HAIRPIN) {
+			doca_fwd.next_pipe = hairpin_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_PORT) {
+			doca_fwd.next_pipe = port_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_PIPE) {
+			doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		} else if (fwd->type == FLOW_FWD_DROP) {
+			doca_fwd.type = DOCA_FLOW_FWD_DROP;
+		} else {
+			printf("Unknown fwd type! (%d)\n", fwd->type);
+		}
+	} else {
+		doca_fwd.type = DOCA_FLOW_FWD_CHANGEABLE;
+	}
+
 	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
