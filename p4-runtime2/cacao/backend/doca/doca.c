@@ -262,13 +262,13 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	if (doca_fwd_ptr) {
 		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
 			return -1;
 		}
 
 		result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 		if (result != DOCA_SUCCESS) {
-			printf(LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to process entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
 			return -1;
 		}
 	}
@@ -829,7 +829,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match,
 						 NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
-		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_get_error_string(result));
 		return -1;
 	}
 #elif CONFIG_BLUEFIELD3
@@ -842,7 +842,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));	
-
+#if 0
 	switch (match->outer.l3_type)
 	{
 	case FLOW_L3_TYPE_IP4:
@@ -879,11 +879,11 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	}
 
 	doca_actions.meta.pkt_meta = actions->meta.pkt_meta;
-
+#endif
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match, NULL, 
                             NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
-		printf(LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
+		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return -1;
 	}
 #endif
