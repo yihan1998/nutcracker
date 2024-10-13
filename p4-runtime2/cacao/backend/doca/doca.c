@@ -570,6 +570,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 		return result;
 	}
+
+	printf(ESC GREEN "[INFO]" RESET " Created pipe %s on port %d\n", pipe_cfg->attr.name, port_id);
 #endif
 #endif
 	*pipe = doca_pipe;
