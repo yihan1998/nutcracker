@@ -861,13 +861,13 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	default:
 		break;
 	}
-
+#endif
 	switch (fwd->type)
 	{
 	case FLOW_FWD_PIPE:
 		doca_fwd.type = DOCA_FLOW_FWD_PIPE;
-		doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
-		// doca_fwd.next_pipe = rss_pipe[port_id];
+		// doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
+		doca_fwd.next_pipe = rss_pipe[port_id];
 		break;
 
 	case FLOW_FWD_DROP:
@@ -879,7 +879,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	}
 
 	doca_actions.meta.pkt_meta = actions->meta.pkt_meta;
-#endif
+
 	result = doca_flow_pipe_control_add_entry(0, priority, pipe, &doca_match, NULL, 
                             NULL, &doca_actions, NULL, NULL, NULL, &doca_fwd, NULL, &entry);
 	if (result != DOCA_SUCCESS) {
