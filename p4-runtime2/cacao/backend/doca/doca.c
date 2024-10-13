@@ -448,8 +448,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-	if (doca_fwd_ptr) {
-		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, doca_fwd_ptr, 0, &status, &entry);
+	if (doca_fwd.type != DOCA_FLOW_FWD_CHANGEABLE) {
+		result = doca_flow_pipe_add_entry(0, doca_pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 		if (result != DOCA_SUCCESS) {
 			printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
 			return -1;
