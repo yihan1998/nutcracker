@@ -973,3 +973,22 @@ int vxlan_encap_offloading() {
 	}
 	return DOCA_SUCCESS;
 }
+
+int stop_doca_flow_ports() {
+	int portid;
+	doca_error_t ret;
+
+	/*
+	 * Stop the ports in reverse order, since in switch mode port 0
+	 * is proxy port, and proxy port should stop as last.
+	 */
+	for (portid = nb_ports - 1; portid >= 0; portid--) {
+		if (ports[portid] != NULL) {
+			ret = doca_flow_port_stop(ports[portid]);
+			/* record first error */
+			if (ret != DOCA_SUCCESS && doca_error == DOCA_SUCCESS)
+				printf(ESC LIGHT_RED "[ERR]" RESET " Failed to stop port %d: %s\n", portid, doca_error_get_descr(result));
+		}
+	}
+	return 0;
+}
