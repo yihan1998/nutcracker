@@ -74,6 +74,7 @@ int run_control_plane(int readFd) {
     {
         std::string cmd = "load_json";
         // std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/C_CODE/egress.json";
+        std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/egress.json";
         std::vector<std::string> input;
         input.push_back(cmd);

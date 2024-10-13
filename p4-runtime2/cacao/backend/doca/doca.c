@@ -940,15 +940,15 @@ int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, str
 }
 
 int vxlan_encap_offloading() {
-	// int port_id = 1234;
+	int port_id = 1234;
 	/* Add ingress */
-	// if (1) {
-	// 	struct flow_pipe * pipe = flow_get_pipe("ingress_udp_tbl_0");
-	// 	// pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", 1234);
-	// 	for (int i = 0; i < 10; i++) {
-	// 		pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", port_id + i);
-	// 	}
-	// }
+	if (1) {
+		struct flow_pipe * pipe = flow_get_pipe("ingress_udp_tbl_0");
+		pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", 1234);
+		// for (int i = 0; i < 10; i++) {
+		// 	pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_2", port_id + i);
+		// }
+	}
 
 	/* Add egress */
 	if (1) {
