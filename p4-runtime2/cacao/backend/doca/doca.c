@@ -846,7 +846,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	switch (match->outer.l3_type)
 	{
 	case FLOW_L3_TYPE_IP4:
-		doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+		doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 		break;
 	
 	default:
@@ -855,7 +855,7 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 
 	switch (match->outer.ip4.protocol) {
 	case IPPROTO_UDP:
-		doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+		doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
 		break;
 
 	default:
