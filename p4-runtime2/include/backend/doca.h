@@ -20,6 +20,7 @@ struct dpdk_config;
 
 int dpdk_init(int argc, char ** argv);
 int doca_init();
+int stop_doca_flow_ports();
 
 int vxlan_encap_offloading();
 

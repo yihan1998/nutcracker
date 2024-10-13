@@ -975,7 +975,7 @@ int vxlan_encap_offloading() {
 }
 
 int stop_doca_flow_ports() {
-	int portid;
+	int portid, nb_ports = 2;
 	doca_error_t ret;
 
 	/*
@@ -986,7 +986,7 @@ int stop_doca_flow_ports() {
 		if (ports[portid] != NULL) {
 			ret = doca_flow_port_stop(ports[portid]);
 			/* record first error */
-			if (ret != DOCA_SUCCESS && doca_error == DOCA_SUCCESS)
+			if (ret != DOCA_SUCCESS)
 				printf(ESC LIGHT_RED "[ERR]" RESET " Failed to stop port %d: %s\n", portid, doca_error_get_descr(result));
 		}
 	}
