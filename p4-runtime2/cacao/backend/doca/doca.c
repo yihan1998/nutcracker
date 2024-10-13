@@ -108,6 +108,7 @@ static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe
 	struct doca_flow_fwd fwd;
 	uint8_t priority = 0;
 	doca_error_t result;
+	struct entries_status status = {0};
 
 	memset(&match, 0, sizeof(match));
 	memset(&fwd, 0, sizeof(fwd));
@@ -129,7 +130,7 @@ static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe
 						  NULL,
 						  NULL,
 						  &fwd,
-						  NULL,
+						  &status,
 						  NULL);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to add control pipe entry: %s\n", doca_error_get_descr(result));
