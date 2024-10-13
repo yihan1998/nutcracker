@@ -98,6 +98,8 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #endif
+	printf("Test creating root conditional pipe >> \n");
+    create_control_pipe();
 
     while (1) {
         ipc_poll();
