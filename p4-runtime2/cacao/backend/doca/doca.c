@@ -467,12 +467,12 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
 	struct doca_flow_pipe_cfg *doca_cfg;
 	struct doca_flow_pipe *doca_pipe;
-	struct doca_flow_fwd fwd;
+	struct doca_flow_fwd doca_fwd;
 	doca_error_t result;
 
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
-	memset(&fwd, 0, sizeof(fwd));
+	memset(&doca_fwd, 0, sizeof(doca_fwd));
 
 	doca_actions_arr[0] = &doca_actions;
 
@@ -517,9 +517,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		return result;
 	}
 
-	fwd.type = DOCA_FLOW_FWD_DROP;
+	doca_fwd.type = DOCA_FLOW_FWD_DROP;
 
-	result = doca_flow_pipe_create(doca_cfg, &fwd, NULL, &doca_pipe);
+	result = doca_flow_pipe_create(doca_cfg, &doca_fwd, NULL, &doca_pipe);
 	if (result != DOCA_SUCCESS) {
 		printf(ESC LIGHT_RED "[ERR]" RESET " Failed to create doca pipe: %s\n", doca_error_get_descr(result));
 		return result;
