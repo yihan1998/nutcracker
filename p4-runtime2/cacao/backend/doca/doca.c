@@ -990,5 +990,8 @@ int stop_doca_flow_ports() {
 				printf(ESC LIGHT_RED "[ERR]" RESET " Failed to stop port %d: %s\n", portid, doca_error_get_descr(ret));
 		}
 	}
+
+	doca_flow_destroy();
+
 	return 0;
 }
