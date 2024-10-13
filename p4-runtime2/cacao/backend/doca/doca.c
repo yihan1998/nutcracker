@@ -273,7 +273,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		}
 	}
 #elif CONFIG_BLUEFIELD3
-#if 0
+#if 1
     struct doca_flow_match doca_match;
 	struct doca_flow_fwd doca_fwd, doca_fwd_miss, *doca_fwd_miss_ptr = NULL;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
@@ -288,6 +288,8 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));
 	memset(&doca_fwd_miss, 0, sizeof(doca_fwd_miss));
+
+	doca_actions_arr[0] = &doca_actions;
 
     result = doca_flow_pipe_cfg_create(&doca_cfg, ports[port_id]);
 	if (result != DOCA_SUCCESS) {
@@ -366,7 +368,6 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 	}
 
 	doca_actions.meta.pkt_meta = UINT32_MAX;
-	doca_actions_arr[0] = &doca_actions;
 
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
@@ -462,7 +463,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			return -1;
 		}
 	}
-#endif
+#else
 	struct doca_flow_match doca_match;
 	struct doca_flow_fwd doca_fwd;
 	struct doca_flow_actions doca_actions, *doca_actions_arr[NB_ACTIONS_ARR];
@@ -499,7 +500,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf("Failed to set doca_flow_pipe_cfg is_root: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-#if 0
+
     enum doca_flow_pipe_domain domain = (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_EGRESS)? DOCA_FLOW_PIPE_DOMAIN_EGRESS : DOCA_FLOW_PIPE_DOMAIN_DEFAULT;
 
 	result = doca_flow_pipe_cfg_set_domain(doca_cfg, domain);
@@ -507,7 +508,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-#endif
+
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
