@@ -227,6 +227,8 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct ethhdr *ethhdr;
     ethhdr = (struct ethhdr *)pkt;
 
+    return 0;
+
 	int ret;
 	uint32_t *data;
 	ret = rte_hash_lookup_data(flow_table_lcore, (const void *) ethhdr->h_dest, (void **)&data);
@@ -282,7 +284,10 @@ static int launch_one_lcore(void * args) {
 
     sec_nb_rx = sec_nb_tx = 0;
 
-    flow_table_lcore = flow_table[lid];
+    // flow_table_lcore = flow_table[lid];
+    char name[32];
+    sprintf(name, "flow_monitor_tbl_%d", lid);
+    flow_table_lcore = rte_hash_find_existing(name);
 
     gettimeofday(&log, NULL);
 
