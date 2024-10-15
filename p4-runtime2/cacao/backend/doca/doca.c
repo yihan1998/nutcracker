@@ -1171,13 +1171,13 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 		memcpy(doca_match.meta.u32, match->meta.u32, 4 * sizeof(uint32_t));
 
 		if (match->outer.l3_type == FLOW_L3_TYPE_IP4) {
-			doca_match.outer.l3_type = DOCA_FLOW_L3_TYPE_IP4;
+			doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 			switch (match->outer.l4_type_ext)
 			{
 				case FLOW_L4_TYPE_EXT_UDP:
-					doca_match.outer.udp.l4_port.dst_port = htons(match->outer.udp.dest);
-					doca_match.outer.udp.l4_port.src_port = htons(match->outer.udp.source);
-					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
+					// doca_match.outer.udp.l4_port.dst_port = htons(match->outer.udp.dest);
+					// doca_match.outer.udp.l4_port.src_port = htons(match->outer.udp.source);
 					break;
 
 				case FLOW_L4_TYPE_EXT_TCP:
