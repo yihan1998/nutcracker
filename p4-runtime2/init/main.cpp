@@ -109,11 +109,11 @@ int run_control_plane(int readFd) {
         net_loop();
         sleep(1);
 
-        for (const auto& pipeline : pipelines) {
-            for (auto pipe : pipeline->Pipes) {
-                flow_pipe_query_entry(pipe);
-            }            
-        }
+        // for (const auto& pipeline : pipelines) {
+        //     for (auto pipe : pipeline->Pipes) {
+        //         flow_pipe_query_entry(pipe);
+        //     }            
+        // }
     }
 }
 

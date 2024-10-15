@@ -1112,7 +1112,6 @@ int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, str
 		int nb_entries = pipe->hwPipe.nb_entries[portid];
 		entry = doca_hw_pipe_add_entry_for_port(portid, pipe->hwPipe.pipe[portid], match, actions, fwd);
 		pipe->hwPipe.entries[portid][nb_entries] = entry;
-		printf("New entry(%p) added to pipe %s on port %d\n", entry, pipe->name, portid);
 		pipe->hwPipe.nb_entries[portid]++;
 	}
 	return DOCA_SUCCESS;
