@@ -26,6 +26,7 @@
 // #include "jit.h"
 // #include "shell.h"
 
+#include "backend/flowPipe.h"
 #include "backend/flowPipeInternal.h"
 
 #undef CR1
@@ -106,11 +107,13 @@ int run_control_plane(int readFd) {
         net_loop();
         sleep(1);
 
-        for (const auto& pipe : pipeline->Pipes) {
-            if (pipe->hwPipe.nb_entries > 0) {
-                std::cout << "Checking Entries Status in Pipe " << pipe->hwPipe.name << std::endl;
-                flow_pipe_query_entry(pipe);
-            }
+        for (const auto& pipeline : pipelines) {
+            for (auto pipe : pipeline) {
+                if (pipe->hwPipe.nb_entries > 0) {
+                    std::cout << "Checking Entries Status in Pipe " << pipe->hwPipe.name << std::endl;
+                    flow_pipe_query_entry(pipe);
+                }
+            }            
         }
     }
 }
