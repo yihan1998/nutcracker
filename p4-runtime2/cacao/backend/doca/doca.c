@@ -102,6 +102,47 @@ int test_create_pipe() {
 	return result;
 }
 
+int create_ingress_udp_tbl_0_hw_pipe(struct flow_pipe* pipe)
+{
+    struct flow_pipe_cfg pipe_cfg;
+    struct flow_match match;
+    struct flow_actions actions;
+    struct flow_actions* actions_arr[1];
+    struct flow_fwd fwd_miss;
+    memset(&pipe_cfg,0,sizeof(pipe_cfg));
+    memset(&match,0,sizeof(match));
+    memset(&actions,0,sizeof(actions));
+    memset(&fwd_miss,0,sizeof(fwd_miss));
+    actions_arr[0]=&actions;
+    pipe_cfg.attr.name="ingress_udp_tbl_0";
+    pipe_cfg.attr.type=FLOW_PIPE_BASIC;
+    pipe_cfg.attr.is_root=true;
+    pipe_cfg.attr.domain=FLOW_PIPE_DOMAIN_INGRESS;
+    pipe_cfg.match=&match;
+    pipe_cfg.actions=actions_arr;
+    pipe_cfg.attr.nb_actions=1;
+    match.outer.l4_type_ext=FLOW_L4_TYPE_EXT_UDP;
+    match.outer.l3_type=FLOW_L3_TYPE_IP4;
+    actions.meta.pkt_meta=0xffffffff;
+    fwd_miss.type=FLOW_FWD_DROP;
+    flow_create_hw_pipe(&pipe_cfg,0,&fwd_miss,pipe);
+    return 0;
+}
+
+int add_ingress_udp_tbl_0_hw_pipe_entry(struct flow_pipe* pipe, const char* next_action, uint16_t dest)
+{
+    struct flow_match match;
+    struct flow_actions actions;
+    struct flow_fwd fwd;
+    memset(&match,0,sizeof(match));
+    memset(&actions,0,sizeof(actions));
+    memset(&fwd,0,sizeof(fwd));
+    match.outer.l4_type_ext=FLOW_L4_TYPE_EXT_UDP;
+    match.outer.l3_type=FLOW_L3_TYPE_IP4;
+    fwd.type=FLOW_FWD_HAIRPIN;
+    return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
+}
+
 static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe, int port_id)
 {
 	struct doca_flow_match match;

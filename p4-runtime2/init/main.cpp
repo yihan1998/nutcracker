@@ -72,7 +72,7 @@ void dpdkThread(int readFd) {
 
 int run_control_plane(int readFd) {
     CommandParser parser;
-#if 1
+#if 0
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
@@ -97,6 +97,10 @@ int run_control_plane(int readFd) {
         input.push_back(test_input);
         parser.runTest(input);
     }
+#else
+    struct flow_pipe* pipe = (struct flow_pipe*)calloc(1,sizeof(struct flow_pipe));
+    create_ingress_udp_tbl_0_hw_pipe(pipe);
+    add_ingress_udp_tbl_0_hw_pipe_entry(pipe,NULL,1234);
 #endif
 
     while (1) {
