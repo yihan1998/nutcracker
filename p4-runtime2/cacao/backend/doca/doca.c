@@ -1078,8 +1078,8 @@ struct doca_flow_pipe_entry * doca_hw_pipe_add_entry_for_port(int port_id, struc
 			doca_fwd.next_pipe = hairpin_pipe[port_id];
 			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
 		} else if (fwd->type == FLOW_FWD_PORT) {
-			doca_fwd.port_id = port_id;
-			doca_fwd.type = DOCA_FLOW_FWD_PORT;
+			doca_fwd.next_pipe = port_pipe[port_id];
+			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
 		} else if (fwd->type == FLOW_FWD_PIPE) {
 			doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
 			doca_fwd.type = DOCA_FLOW_FWD_PIPE;
