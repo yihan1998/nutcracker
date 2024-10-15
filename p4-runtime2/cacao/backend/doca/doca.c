@@ -1127,6 +1127,7 @@ int doca_hw_pipe_query_entry(struct flow_pipe* pipe) {
 			printf("Pipe %s entry[%d] status on port => \n", pipe->name, portid);
 			result = doca_flow_resource_query_entry(pipe->hwPipe.entries[portid][i], &query_stats);
 			if (result != DOCA_SUCCESS) {
+				printf("Failed to query entry: %s\n", doca_error_get_descr(result));
 				continue;
 			}
 			printf("Total bytes: %ld / Total packets: %ld\n", query_stats.counter.total_bytes, query_stats.counter.total_pkts);
