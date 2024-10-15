@@ -92,6 +92,8 @@ int run_control_plane(int readFd) {
         input.push_back(C_input);
         parser.loadJson(input);   
     }
+#endif
+#if 1
     {
         std::string cmd = "run_test";
         std::string test_input = "vxlan";
