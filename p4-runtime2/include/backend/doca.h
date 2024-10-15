@@ -22,7 +22,8 @@ struct dpdk_config;
 int dpdk_init(int argc, char ** argv);
 int doca_init();
 
-int vxlan_encap_offloading();
+int vxlan_encap_sw();
+int vxlan_encap_hw_offloading();
 
 #ifdef __cplusplus
 } /* extern "C" */

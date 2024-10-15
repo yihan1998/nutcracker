@@ -73,7 +73,7 @@ void dpdkThread(int readFd) {
 
 int run_control_plane(int readFd) {
     CommandParser parser;
-#if 1
+#if 0
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
@@ -83,10 +83,10 @@ int run_control_plane(int readFd) {
         parser.loadJson(input);   
     }
 #endif
-#if 0
+#if 1
     {
         std::string cmd = "load_json";
-        std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/egress.json";
+        std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/C_CODE/egress.json";
         std::vector<std::string> input;
         input.push_back(cmd);
         input.push_back(C_input);
