@@ -609,9 +609,9 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			{
 				case FLOW_L4_TYPE_EXT_UDP:
 					doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
-					doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
-					doca_match.outer.udp.l4_port.src_port = pipe_cfg->match->outer.udp.dest;
-					doca_match.outer.udp.l4_port.dst_port = pipe_cfg->match->outer.udp.dest;
+					// doca_match.outer.l4_type_ext = DOCA_FLOW_L4_TYPE_EXT_UDP;
+					// doca_match.outer.udp.l4_port.src_port = pipe_cfg->match->outer.udp.dest;
+					// doca_match.outer.udp.l4_port.dst_port = pipe_cfg->match->outer.udp.dest;
 					break;
 
 				case FLOW_L4_TYPE_EXT_TCP:
