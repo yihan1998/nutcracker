@@ -746,15 +746,13 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			}
 		}
 	}
-#endif
-	doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-#if 0
+
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
 		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
@@ -783,13 +781,13 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			}
 		}
 	}
-#endif
+
 	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, 1);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-
+#endif
 	/* Set fwd */
 	if (fwd) {
 		if (fwd->type == FLOW_FWD_RSS) {
