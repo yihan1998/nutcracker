@@ -116,7 +116,7 @@ int create_ingress_udp_tbl_0_hw_pipe(struct flow_pipe* pipe)
     actions_arr[0]=&actions;
     pipe_cfg.attr.name="ingress_udp_tbl_0";
     pipe_cfg.attr.type=FLOW_PIPE_BASIC;
-    pipe_cfg.attr.is_root=true;
+    pipe_cfg.attr.is_root=false;
     pipe_cfg.attr.domain=FLOW_PIPE_DOMAIN_INGRESS;
     pipe_cfg.match=&match;
     pipe_cfg.actions=actions_arr;
@@ -141,13 +141,6 @@ int add_ingress_udp_tbl_0_hw_pipe_entry(struct flow_pipe* pipe, const char* next
     match.outer.l3_type=FLOW_L3_TYPE_IP4;
     fwd.type=FLOW_FWD_HAIRPIN;
     return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
-}
-
-int test_doca(void) {
-	struct flow_pipe* pipe = (struct flow_pipe*)calloc(1,sizeof(struct flow_pipe));
-    create_ingress_udp_tbl_0_hw_pipe(pipe);
-    add_ingress_udp_tbl_0_hw_pipe_entry(pipe,NULL,1234);
-	return 0;
 }
 
 static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe, int port_id)
@@ -903,7 +896,7 @@ int doca_create_hw_pipe(struct flow_pipe* pipe, struct flow_pipe_cfg* pipe_cfg, 
 	return DOCA_SUCCESS;
 }
 
-int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd) {
+struct doca_flow_pipe_entry * doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd) {
 #ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match doca_match;
 	struct doca_flow_actions doca_actions;
@@ -1015,8 +1008,6 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 	int num_of_entries = 1;
 	doca_error_t result;
 
-	printf(GREEN "[INFO]" RESET " Adding entry to pipe on port %d...\n", port_id);
-
 	memset(&doca_match, 0, sizeof(doca_match));
 	memset(&doca_actions, 0, sizeof(doca_actions));
 	memset(&doca_fwd, 0, sizeof(doca_fwd));
@@ -1118,9 +1109,29 @@ int doca_hw_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *pipe, st
 int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd) {
     int portid;
 	RTE_ETH_FOREACH_DEV(portid) {
-	    doca_hw_pipe_add_entry_for_port(portid, pipe->hwPipe.pipe[portid], match, actions, fwd);
+	    struct doca_flow_pipe_entry * entry;
+		int nb_entries = pipe->hwPipe.entries[portid];
+		entry = doca_hw_pipe_add_entry_for_port(portid, pipe->hwPipe.pipe[portid], match, actions, fwd);
+		pipe->hwPipe.entries[portid][nb_entries] = entry;
+		pipe->hwPipe.entries[portid]++;
 	}
 	return DOCA_SUCCESS;
+}
+
+int doca_hw_pipe_query_entry(struct flow_pipe* pipe) {
+	/* dump entries counters */
+	int portid;
+	struct doca_flow_resource_query query_stats;
+	RTE_ETH_FOREACH_DEV(portid) {
+		for (int i = 0; i < pipe->hwPipe.nb_entries; i++) {
+			printf("\tOn port %d =>\n", portid);
+			result = doca_flow_resource_query_entry(pipe->hwPipe.entries[portid][i], &query_stats);
+			if (result != DOCA_SUCCESS) {
+				continue;
+			}
+			printf("Total bytes: %ld / Total packets: %ld\n", query_stats.counter.total_bytes, query_stats.counter.total_pkts);
+		}
+	}
 }
 
 int vxlan_encap_offloading() {

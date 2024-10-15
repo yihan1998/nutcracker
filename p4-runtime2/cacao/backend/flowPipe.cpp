@@ -74,6 +74,10 @@ extern "C" int create_fsm_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* 
     return 0;
 }
 
+extern "C" int flow_pipe_query_entry(struct flow_pipe* pipe) {
+    return doca_hw_pipe_query_entry(pipe);
+}
+
 extern "C" struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct sk_buff* skb) {
     // return fsm_table_pipe_match(pipe, match, skb);
     auto tablePipe = static_cast<TablePipe*>(pipe->swPipe.pipe);

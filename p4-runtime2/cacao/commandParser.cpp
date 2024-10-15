@@ -52,6 +52,7 @@ void CommandParser::instantializeHwPipe(Pipeline& pipeline, struct flow_pipe * p
         auto func = (int (*)(struct flow_pipe *, ...))symbol.getAddress();
         pipe->hwPipe.ops.add_pipe_entry = (int (*)(struct flow_pipe *, const char *, ...))func;
     }
+    pipe->hwPipe.nb_entries = 0;
 }
 
 void CommandParser::instantializeFsmPipe(Pipeline& pipeline, struct flow_pipe * pipe, const json& fsmOps) {

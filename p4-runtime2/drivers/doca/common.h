@@ -49,8 +49,6 @@ int doca_init();
 int stop_doca_flow_ports();
 int create_control_pipe();
 
-int test_doca();
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

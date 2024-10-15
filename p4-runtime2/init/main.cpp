@@ -72,7 +72,7 @@ void dpdkThread(int readFd) {
 
 int run_control_plane(int readFd) {
     CommandParser parser;
-#if 0
+#if 1
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
@@ -81,6 +81,8 @@ int run_control_plane(int readFd) {
         input.push_back(C_input);
         parser.loadJson(input);   
     }
+#endif
+#if 0
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/egress.json";
@@ -97,13 +99,19 @@ int run_control_plane(int readFd) {
         input.push_back(test_input);
         parser.runTest(input);
     }
-#else
-    test_doca();
 #endif
 
     while (1) {
         ipc_poll();
         net_loop();
+        sleep(1);
+
+        for (const auto& pipe : pipeline->Pipes) {
+            if (pipe->hwPipe.nb_entries > 0) {
+                std::cout << "Checking Entries Status in Pipe " << pipe->hwPipe.name << std::endl;
+                flow_pipe_query_entry(pipe);
+            }
+        }
     }
 }
 

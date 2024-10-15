@@ -185,6 +185,8 @@ struct pipe_operations {
 struct hw_flow_pipe {
     struct doca_flow_pipe * pipe[DOCA_MAX_PORTS];
     struct pipe_operations ops;
+    int nb_entries[DOCA_MAX_PORTS];
+    struct doca_flow_pipe_entry * entries[DOCA_MAX_PORTS][16];
 };
 
 struct sw_flow_pipe {
@@ -223,6 +225,8 @@ int flow_get_pipe_id_by_name(char* pipe_name);
 int flow_create_hw_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss, struct flow_pipe* pipe);
 int flow_hw_control_pipe_add_entry(struct flow_pipe* pipe, uint8_t priority, struct flow_match* match, struct flow_actions* action, struct flow_fwd* fwd);
 int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd);
+
+int flow_pipe_query_entry(struct flow_pipe* pipe);
 
 #ifdef __cplusplus
 } /* extern "C" */
