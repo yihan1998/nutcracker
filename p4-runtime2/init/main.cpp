@@ -109,9 +109,7 @@ int run_control_plane(int readFd) {
 
         for (const auto& pipeline : pipelines) {
             for (auto pipe : pipeline->Pipes) {
-                if (pipe->hwPipe.nb_entries > 0) {
-                    flow_pipe_query_entry(pipe);
-                }
+                flow_pipe_query_entry(pipe);
             }            
         }
     }
