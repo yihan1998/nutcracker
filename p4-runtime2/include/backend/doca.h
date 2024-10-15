@@ -22,7 +22,6 @@ int dpdk_init(int argc, char ** argv);
 int doca_init();
 
 int vxlan_encap_offloading();
-int test_doca();
 
 #ifdef __cplusplus
 } /* extern "C" */
