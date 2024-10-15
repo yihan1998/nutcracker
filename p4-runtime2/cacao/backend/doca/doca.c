@@ -591,7 +591,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 		printf("Failed to set doca_flow_pipe_cfg domain: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-
+#if 0
 	if (pipe_cfg->match) {
 		/* Set match.meta */
 		// doca_match.meta.pkt_meta = pipe_cfg->match->meta.pkt_meta;
@@ -627,13 +627,13 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			}
 		}
 	}
-
+#endif
     result = doca_flow_pipe_cfg_set_match(doca_cfg, &doca_match, NULL);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg match: %s\n", doca_error_get_descr(result));
 		return result;
 	}
-
+#if 0
 	if (pipe_cfg->attr.nb_actions > 0) {
 		/* Only have 1 action */
 		for (int i = 0; i < pipe_cfg->attr.nb_actions; i++) {
@@ -662,7 +662,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 			}
 		}
 	}
-
+#endif
 	result = doca_flow_pipe_cfg_set_actions(doca_cfg, doca_actions_arr, NULL, NULL, 1);
 	if (result != DOCA_SUCCESS) {
 		printf("Failed to set doca_flow_pipe_cfg actions: %s\n", doca_error_get_descr(result));
