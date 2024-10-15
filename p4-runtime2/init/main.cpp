@@ -98,7 +98,7 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #else
-    run_test();
+    test_doca();
 #endif
 
     while (1) {

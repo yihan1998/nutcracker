@@ -143,7 +143,7 @@ int add_ingress_udp_tbl_0_hw_pipe_entry(struct flow_pipe* pipe, const char* next
     return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
 }
 
-int run_test() {
+int test_doca(void) {
 	struct flow_pipe* pipe = (struct flow_pipe*)calloc(1,sizeof(struct flow_pipe));
     create_ingress_udp_tbl_0_hw_pipe(pipe);
     add_ingress_udp_tbl_0_hw_pipe_entry(pipe,NULL,1234);
