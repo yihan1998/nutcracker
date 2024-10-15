@@ -110,7 +110,7 @@ struct rte_eth_conf port_conf = {
 };
 
 /* Packet mempool for each core */
-struct rte_mempool * pkt_mempools[8];
+struct rte_mempool * pkt_mempools[16];
 
 static int config_ports(void) {
     int ret;
