@@ -98,9 +98,7 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #else
-    struct flow_pipe* pipe = (struct flow_pipe*)calloc(1,sizeof(struct flow_pipe));
-    create_ingress_udp_tbl_0_hw_pipe(pipe);
-    add_ingress_udp_tbl_0_hw_pipe_entry(pipe,NULL,1234);
+    run_test();
 #endif
 
     while (1) {
