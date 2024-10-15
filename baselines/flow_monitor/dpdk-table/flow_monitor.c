@@ -227,8 +227,6 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct ethhdr *ethhdr;
     ethhdr = (struct ethhdr *)pkt;
 
-    return 0;
-
 	int ret;
 	uint32_t *data;
 	ret = rte_hash_lookup_data(flow_table_lcore, (const void *) ethhdr->h_dest, (void **)&data);
