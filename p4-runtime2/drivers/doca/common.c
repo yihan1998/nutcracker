@@ -813,9 +813,6 @@ int doca_init(void) {
 		printf(ESC GREEN "[DONE]" RESET "\n");
 	}
 
-	// printf("Test creating root conditional pipe >> \n");
-    // create_control_pipe();
-
     return 0;
 }
 

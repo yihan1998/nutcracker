@@ -72,7 +72,7 @@ void dpdkThread(int readFd) {
 
 int run_control_plane(int readFd) {
     CommandParser parser;
-#if 0
+#if 1
     {
         std::string cmd = "load_json";
         std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
@@ -98,8 +98,6 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #endif
-	// printf("Test creating root conditional pipe >> \n");
-    // create_control_pipe();
 
     while (1) {
         ipc_poll();
@@ -144,21 +142,13 @@ int main(int argc, char **argv) {
     doca_init();
     docadv_init();
 #endif  /* CONFIG_DOCA */
-    if (0)
-    {
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    }
+
     /* Register termination handling callback */
     signal(SIGINT, signal_handler);
 
     pr_info("init: starting JIT...\n");
     jit_init();
-    if (0)
-    {
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    }
+
     pipe(pipeFds);
 
     int flags = fcntl(pipeFds[0], F_GETFL, 0);
@@ -172,27 +162,11 @@ int main(int argc, char **argv) {
     // DPDK thread
     // std::thread dpdk(dpdkThread, std::ref(netStats), pipeFds[0]);
     // dpdk.join();
-    if (0)
-    {
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    }
-    kernel_early_boot = false;
 
-    if (0)
-    {
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    }
+    kernel_early_boot = false;
 
     pr_info("init: initializing fs...\n");
 	fs_init();
-
-    if (0)
-    {
-	printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    create_control_pipe();
-    }
 
     /* Reserve 0, 1, and 2 for stdin, stdout, and stderr */
     set_open_fd(0);
@@ -233,9 +207,6 @@ int main(int argc, char **argv) {
         args[i].shell_pipe_fd = pipeFds[1];
         i++;
     }
-
-	// printf("[%s:%d] Test creating root conditional pipe >> \n", __func__, __LINE__);
-    // create_control_pipe();
 
     /* Launch per-lcore init on every lcore */
 	rte_eal_mp_remote_launch(lcore_main, args, CALL_MAIN);
