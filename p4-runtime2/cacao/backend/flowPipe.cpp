@@ -13,10 +13,9 @@ static std::vector<std::unique_ptr<LLJIT>> GlobalJITs;
 extern "C" struct flow_pipe* flow_get_pipe(char* pipe_name) {
     struct flow_pipe * pipe = NULL;
     for (auto p : pipelines) {
-        // printf("[%s:%d] Looking for pipe %s in pipeline %s...\n", __func__, __LINE__, pipe_name, p->Name.c_str());
         pipe = p->lookupFlowPipe(pipe_name);
         if (pipe) {
-            // printf("[%s:%d] Pipe %s is at %p\n", __func__, __LINE__, pipe_name, pipe);
+            printf("[%s:%d] Pipe %s in pipeline %s has id %u\n", __func__, __LINE__, pipe_name, p->Name.c_str(), pipe->id);
             return pipe;
         }
     }
