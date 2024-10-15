@@ -3,7 +3,7 @@
 #include "syscall.h"
 #include "kernel/sched.h"
 #include "fs/fs.h"
-
+#if 0
 int __ioctl(unsigned int fd, unsigned int cmd, unsigned long arg) {
     return 0;
 }
@@ -20,3 +20,4 @@ int ioctl(unsigned int fd, unsigned int cmd, unsigned long arg) {
     pr_debug(FS_DEBUG, "%s: fd: %d, cmd: %u, arg: %lu\n", __func__, fd, cmd, arg);
     return __ioctl(fd, cmd, arg);
 }
+#endif

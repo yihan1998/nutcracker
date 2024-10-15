@@ -48,9 +48,9 @@ int __init syscall_hook_init(void) {
     libc_sendto = bind_symbol("sendto");
     libc_recvmsg = bind_symbol("recvmsg");
     libc_recvfrom = bind_symbol("recvfrom");
-
+#if 0
     libc_ioctl = bind_symbol("ioctl");
-
+#endif
     syscall_hooked = true;
 
     return 0;

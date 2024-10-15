@@ -60,7 +60,7 @@ struct proto_ops {
 	int (*accept)(struct socket * sock, struct socket * newsock, int flags);
 	int	(*getname)(struct socket * sock, struct sockaddr * addr, int peer);
 	__poll_t (*poll)(struct file * file, struct socket * sock, struct poll_table_struct * wait);
-    int	(*ioctl)(struct socket * sock, unsigned int cmd, unsigned long arg);
+    // int	(*ioctl)(struct socket * sock, unsigned int cmd, unsigned long arg);
 	int (*sendmsg)(struct socket * sock, struct msghdr * m, size_t total_len);
 	int (*recvmsg)(struct socket * sock, struct msghdr * m, size_t total_len, int flags);
 	int (*listen)(struct socket * sock, int backlog);
