@@ -1093,27 +1093,26 @@ struct doca_flow_pipe_entry * doca_hw_pipe_add_entry_for_port(int port_id, struc
 	result = doca_flow_pipe_add_entry(0, pipe, &doca_match, &doca_actions, NULL, &doca_fwd, 0, &status, &entry);
 	if (result != DOCA_SUCCESS) {
 		pr_err("Failed to add entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-
-		return -1;
+		return NULL;
 	}
 
 	result = doca_flow_entries_process(ports[port_id], 0, PULL_TIME_OUT, num_of_entries);
 	if (result != DOCA_SUCCESS) {
 		pr_err("Failed to process entry to pipe on port %d (%s)\n", port_id, doca_error_get_descr(result));
-		return -1;
+		return NULL;
 	}
 #endif
-	return DOCA_SUCCESS;
+	return entry;
 }
 
 int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd) {
     int portid;
 	RTE_ETH_FOREACH_DEV(portid) {
 	    struct doca_flow_pipe_entry * entry;
-		int nb_entries = pipe->hwPipe.entries[portid];
+		int nb_entries = pipe->hwPipe.nb_entries[portid];
 		entry = doca_hw_pipe_add_entry_for_port(portid, pipe->hwPipe.pipe[portid], match, actions, fwd);
 		pipe->hwPipe.entries[portid][nb_entries] = entry;
-		pipe->hwPipe.entries[portid]++;
+		pipe->hwPipe.nb_entries[portid]++;
 	}
 	return DOCA_SUCCESS;
 }
@@ -1122,8 +1121,9 @@ int doca_hw_pipe_query_entry(struct flow_pipe* pipe) {
 	/* dump entries counters */
 	int portid;
 	struct doca_flow_resource_query query_stats;
+	doca_error_t result;
 	RTE_ETH_FOREACH_DEV(portid) {
-		for (int i = 0; i < pipe->hwPipe.nb_entries; i++) {
+		for (int i = 0; i < pipe->hwPipe.nb_entries[portid]; i++) {
 			printf("\tOn port %d =>\n", portid);
 			result = doca_flow_resource_query_entry(pipe->hwPipe.entries[portid][i], &query_stats);
 			if (result != DOCA_SUCCESS) {
@@ -1132,6 +1132,7 @@ int doca_hw_pipe_query_entry(struct flow_pipe* pipe) {
 			printf("Total bytes: %ld / Total packets: %ld\n", query_stats.counter.total_bytes, query_stats.counter.total_pkts);
 		}
 	}
+	return 0;
 }
 
 int vxlan_encap_offloading() {
