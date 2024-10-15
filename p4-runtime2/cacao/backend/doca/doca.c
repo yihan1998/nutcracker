@@ -1112,6 +1112,7 @@ int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, str
 		int nb_entries = pipe->hwPipe.nb_entries[portid];
 		entry = doca_hw_pipe_add_entry_for_port(portid, pipe->hwPipe.pipe[portid], match, actions, fwd);
 		pipe->hwPipe.entries[portid][nb_entries] = entry;
+		printf("New entry(%p) added to pipe %s on port %d\n", entry, pipe->name, portid);
 		pipe->hwPipe.nb_entries[portid]++;
 	}
 	return DOCA_SUCCESS;
@@ -1124,7 +1125,7 @@ int doca_hw_pipe_query_entry(struct flow_pipe* pipe) {
 	doca_error_t result;
 	RTE_ETH_FOREACH_DEV(portid) {
 		for (int i = 0; i < pipe->hwPipe.nb_entries[portid]; i++) {
-			printf("Pipe %s entry[%d] status on port => \n", pipe->name, portid);
+			printf("Pipe %s entry[%d] (%p) status on port => \n", pipe->name, pipe->hwPipe.entries[portid][i], portid);
 			result = doca_flow_resource_query_entry(pipe->hwPipe.entries[portid][i], &query_stats);
 			if (result != DOCA_SUCCESS) {
 				printf("Failed to query entry: %s\n", doca_error_get_descr(result));
