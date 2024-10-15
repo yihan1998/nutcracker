@@ -52,7 +52,8 @@ void CommandParser::instantializeHwPipe(Pipeline& pipeline, struct flow_pipe * p
         auto func = (int (*)(struct flow_pipe *, ...))symbol.getAddress();
         pipe->hwPipe.ops.add_pipe_entry = (int (*)(struct flow_pipe *, const char *, ...))func;
     }
-    pipe->hwPipe.nb_entries = 0;
+    memset(pipe->hwPipe.nb_entries, 0, sizeof(int) * DOCA_MAX_PORTS);
+    memset(pipe->hwPipe.entries, 0, sizeof(struct doca_flow_pipe_entry *) * 16 * DOCA_MAX_PORTS);
 }
 
 void CommandParser::instantializeFsmPipe(Pipeline& pipeline, struct flow_pipe * pipe, const json& fsmOps) {

@@ -15,6 +15,7 @@ int doca_create_hw_control_pipe(struct flow_pipe* pipe, struct flow_pipe_cfg* pi
 int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe* pipe, int priority, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd);
 int doca_hw_control_pipe_add_entry(struct flow_pipe* pipe, int priority, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd);
 int doca_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match *match, struct flow_actions* actions, struct flow_fwd* fwd);
+int doca_hw_pipe_query_entry(struct flow_pipe* pipe);
 
 struct dpdk_config;
 
