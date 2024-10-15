@@ -21,10 +21,8 @@ struct dpdk_config;
 int dpdk_init(int argc, char ** argv);
 int doca_init();
 
-int create_ingress_udp_tbl_0_hw_pipe(struct flow_pipe* pipe);
-int add_ingress_udp_tbl_0_hw_pipe_entry(struct flow_pipe* pipe, const char* next_action, uint16_t dest);
-
 int vxlan_encap_offloading();
+int run_test();
 
 #ifdef __cplusplus
 } /* extern "C" */

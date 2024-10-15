@@ -143,6 +143,13 @@ int add_ingress_udp_tbl_0_hw_pipe_entry(struct flow_pipe* pipe, const char* next
     return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
 }
 
+int run_test() {
+	struct flow_pipe* pipe = (struct flow_pipe*)calloc(1,sizeof(struct flow_pipe));
+    create_ingress_udp_tbl_0_hw_pipe(pipe);
+    add_ingress_udp_tbl_0_hw_pipe_entry(pipe,NULL,1234);
+	return 0;
+}
+
 static doca_error_t add_control_pipe_entries(struct doca_flow_pipe *control_pipe, int port_id)
 {
 	struct doca_flow_match match;
