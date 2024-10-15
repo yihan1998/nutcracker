@@ -107,13 +107,6 @@ int run_control_plane(int readFd) {
     while (1) {
         ipc_poll();
         net_loop();
-        sleep(1);
-
-        // for (const auto& pipeline : pipelines) {
-        //     for (auto pipe : pipeline->Pipes) {
-        //         flow_pipe_query_entry(pipe);
-        //     }            
-        // }
     }
 }
 
