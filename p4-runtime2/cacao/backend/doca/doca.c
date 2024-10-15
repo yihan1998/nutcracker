@@ -972,7 +972,6 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 		return -1;
 	}
 #else
-	printf("Adding entry into conditional pipe...\n");
 	struct doca_flow_match doca_match;
 	struct doca_flow_fwd doca_fwd;
 	uint8_t doca_priority = 0;
@@ -984,9 +983,21 @@ int doca_hw_control_pipe_add_entry_for_port(int port_id, struct doca_flow_pipe *
 	doca_match.parser_meta.outer_l3_type = DOCA_FLOW_L3_META_IPV4;
 	doca_match.parser_meta.outer_l4_type = DOCA_FLOW_L4_META_UDP;
 
-	// doca_fwd.type = DOCA_FLOW_FWD_PIPE;
-	// doca_fwd.next_pipe = rss_pipe[port_id];
-	doca_fwd.type = DOCA_FLOW_FWD_DROP;
+	switch (fwd->type)
+	{
+	case FLOW_FWD_PIPE:
+		doca_fwd.type = DOCA_FLOW_FWD_PIPE;
+		doca_fwd.next_pipe = fwd->next_pipe->hwPipe.pipe[port_id];
+		// doca_fwd.next_pipe = rss_pipe[port_id];
+		break;
+
+	case FLOW_FWD_DROP:
+		doca_fwd.type = DOCA_FLOW_FWD_DROP;
+		break;
+
+	default:
+		break;
+	}
 
 	result = doca_flow_pipe_control_add_entry(0,
 						  doca_priority,
