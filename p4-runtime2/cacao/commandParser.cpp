@@ -342,8 +342,11 @@ void CommandParser::runTest(const std::vector<std::string>& args) {
 
     if (args[1] == "vxlan") {
         std::cout << "Run VXLAN offloading test..." << std::endl;
-        // vxlan_encap_hw_offloading();
-        vxlan_encap_sw();
+        vxlan_encap_hw_offloading();
+        // vxlan_encap_sw();
+    } else if (args[1] == "flow_monitor") {
+        std::cout << "Run FLOW MONITOR offloading test..." << std::endl;
+        flow_monitor_hw_offloading();
     }
 
     return;

@@ -15,7 +15,7 @@ extern "C" struct flow_pipe* flow_get_pipe(char* pipe_name) {
     for (auto p : pipelines) {
         pipe = p->lookupFlowPipe(pipe_name);
         if (pipe) {
-            printf("[%s:%d] Pipe %s in pipeline %s has id %u\n", __func__, __LINE__, pipe_name, p->Name.c_str(), pipe->id);
+            // printf("[%s:%d] Pipe %s in pipeline %s has id %u\n", __func__, __LINE__, pipe_name, p->Name.c_str(), pipe->id);
             return pipe;
         }
     }
@@ -27,7 +27,7 @@ extern "C" int flow_get_pipe_id_by_name(char* pipe_name) {
     for (auto p : pipelines) {
         pipe = p->lookupFlowPipe(pipe_name);
         if (pipe) {
-            printf("[%s:%d] Pipe %s in pipeline %s has id %u\n", __func__, __LINE__, pipe_name, p->Name.c_str(), pipe->id);
+            // printf("[%s:%d] Pipe %s in pipeline %s has id %u\n", __func__, __LINE__, pipe_name, p->Name.c_str(), pipe->id);
             return pipe->id;
         }
     }
@@ -45,8 +45,8 @@ extern "C" int flow_hw_control_pipe_add_entry(struct flow_pipe* pipe, uint8_t pr
     return doca_hw_control_pipe_add_entry(pipe, priority, match, action, fwd);
 }
 
-extern "C" int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd) {
-    return doca_hw_pipe_add_entry(pipe, match, actions, fwd);
+extern "C" int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_monitor* monitor, struct flow_fwd* fwd) {
+    return doca_hw_pipe_add_entry(pipe, match, actions, monitor, fwd);
 }
 
 extern "C" uint8_t * get_packet(struct sk_buff* skb) {

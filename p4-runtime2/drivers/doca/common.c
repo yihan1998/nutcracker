@@ -20,6 +20,7 @@
 int nb_ports = 2;
 struct doca_flow_port *ports[MAX_PORTS];
 struct doca_flow_pipe *rss_pipe[2], *hairpin_pipe[2], *port_pipe[2];
+struct doca_flow_pipe_entry * hairpin_entry[2];
 
 struct entries_status {
 	bool failure;		/* will be set to true if some entry status will not be success */
@@ -35,6 +36,20 @@ struct flow_resources {
 #define NB_ACTION_ARRAY	(1)
 
 #define PULL_TIME_OUT 10000
+
+int query_hairpin() {
+	struct doca_flow_query query_stats;
+	doca_error_t result;
+	for (int i = 0; i < 2; i++) {
+		result = doca_flow_query_entry(hairpin_entry[i], &query_stats);
+		if (result != DOCA_SUCCESS) {
+			printf("Failed to query entry: %s\n", doca_get_error_string(result));
+			continue;
+		}
+		printf("Total bytes: %ld / Total packets: %ld\n", query_stats.total_bytes, query_stats.total_pkts);
+	}
+	return 0;
+}
 
 doca_error_t open_doca_device_with_pci(const char *pci_addr, jobs_check func, struct doca_dev **retval) {
 	struct doca_devinfo **dev_list;
@@ -489,6 +504,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 #ifdef CONFIG_BLUEFIELD2
 	struct doca_flow_match match;
 	struct doca_flow_actions actions, *actions_arr[NB_ACTION_ARRAY];
+	struct doca_flow_monitor monitor;
 	struct doca_flow_fwd fwd;
 	struct doca_flow_pipe_cfg pipe_cfg;
 	struct entries_status *status;
@@ -497,16 +513,20 @@ int build_hairpin_pipe(uint16_t port_id) {
 
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
+	memset(&monitor, 0, sizeof(monitor));
 	memset(&fwd, 0, sizeof(fwd));
 	memset(&pipe_cfg, 0, sizeof(pipe_cfg));
 
 	status = (struct entries_status *)calloc(1, sizeof(struct entries_status));
 
+	monitor.flags = DOCA_FLOW_MONITOR_COUNT;
+
 	pipe_cfg.attr.name = "HAIRPIN_PIPE";
 	pipe_cfg.match = &match;
+	pipe_cfg.monitor = &monitor;
 	actions_arr[0] = &actions;
 	pipe_cfg.actions = actions_arr;
-	pipe_cfg.attr.is_root = false;
+	pipe_cfg.attr.is_root = true;
 	pipe_cfg.attr.nb_actions = NB_ACTION_ARRAY;
 	pipe_cfg.port = ports[port_id];
 
@@ -519,7 +539,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 		return -1;
 	}
 
-	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, NULL);
+	result = doca_flow_pipe_add_entry(0, hairpin_pipe[port_id], &match, &actions, NULL, &fwd, 0, status, &hairpin_entry[port_id]);
 	if (result != DOCA_SUCCESS) {
 		free(status);
 		return -1;
@@ -745,7 +765,7 @@ int build_rss_pipe(uint16_t port_id) {
 
 int doca_init(void) {
 #ifdef CONFIG_BLUEFIELD2
-	struct doca_flow_resources resource = {0};
+	struct doca_flow_resources resource = {.nb_counters = 1<<13};
 	uint32_t nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_MAX] = {0};
 	doca_error_t result;
 

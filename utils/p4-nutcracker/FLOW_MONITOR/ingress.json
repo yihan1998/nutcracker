@@ -1,0 +1,50 @@
+{
+    "name": "ingress",
+    "pipes": [
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_ingress_hairpin_0_hw_pipe"
+            },
+            "name": "ingress_hairpin_0"
+        },
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "add_pipe_entry": "add_ingress_monitor_1_hw_pipe_entry",
+                "create_pipe": "create_ingress_monitor_1_hw_pipe"
+            },
+            "name": "ingress_monitor_1"
+        },
+        {
+            "hw_enable": true,
+            "hw_ops": {
+                "create_pipe": "create_ingress_rss_2_hw_pipe"
+            },
+            "name": "ingress_rss_2"
+        },
+        {
+            "actions": [
+                {
+                    "id": 1,
+                    "name": "ingress.monitor"
+                },
+                {
+                    "id": 0,
+                    "name": "ingress.hairpin"
+                },
+                {
+                    "id": 2,
+                    "name": "ingress.rss"
+                }
+            ],
+            "hw_enable": true,
+            "hw_ops": {
+                "add_pipe_entry": "add_ingress_monitor_tbl_0_hw_pipe_entry",
+                "create_pipe": "create_ingress_monitor_tbl_0_hw_pipe"
+            },
+            "name": "ingress_monitor_tbl_0"
+        }
+    ],
+    "source_code": "/home/ubuntu/Nutcracker/utils/p4-nutcracker/build/../FLOW_MONITOR/ingress.bc"
+}

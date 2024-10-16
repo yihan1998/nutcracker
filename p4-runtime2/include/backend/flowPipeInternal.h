@@ -123,6 +123,18 @@ struct flow_actions
     struct flow_encap_action encap;
 } __attribute__((packed));
 
+enum flow_monitor_type
+{
+    FLOW_MONITOR_NONE=0,
+    FLOW_MONITOR_METER,
+    FLOW_MONITOR_COUNT,
+};
+
+struct flow_monitor
+{
+    uint8_t flags;
+} __attribute__((packed));
+
 enum flow_fwd_type
 {
     FLOW_FWD_NONE=0,
@@ -165,6 +177,7 @@ struct flow_pipe_cfg
     struct flow_pipe_attr attr;
     struct flow_match* match;
     struct flow_actions** actions;
+    struct flow_monitor* monitor;
 } __attribute__((packed));
 
 /* END AUTOGEN HEADER */
@@ -224,7 +237,7 @@ struct flow_pipe* flow_get_pipe(char* pipe_name);
 int flow_get_pipe_id_by_name(char* pipe_name);
 int flow_create_hw_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss, struct flow_pipe* pipe);
 int flow_hw_control_pipe_add_entry(struct flow_pipe* pipe, uint8_t priority, struct flow_match* match, struct flow_actions* action, struct flow_fwd* fwd);
-int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd);
+int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_monitor* monitor, struct flow_fwd* fwd);
 
 int flow_pipe_query_entry(struct flow_pipe* pipe);
 

@@ -76,24 +76,24 @@ int run_control_plane(int readFd) {
 #if 0
     {
         std::string cmd = "load_json";
-        std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/out/ingress.json";
+        std::string C_input = "/home/ubuntu/Nutcracker/utils/p4-nutcracker/out/ingress.json";
         std::vector<std::string> input;
         input.push_back(cmd);
         input.push_back(C_input);
         parser.loadJson(input);   
     }
 #endif
-#if 1
+#if 0
     {
         std::string cmd = "load_json";
-        std::string C_input = "/home/ubuntu/.yihan/Nutcracker/utils/p4-nutcracker/C_CODE/egress.json";
+        std::string C_input = "/home/ubuntu/Nutcracker/utils/p4-nutcracker/out/egress.json";
         std::vector<std::string> input;
         input.push_back(cmd);
         input.push_back(C_input);
         parser.loadJson(input);   
     }
 #endif
-#if 1
+#if 0
     {
         std::string cmd = "run_test";
         std::string test_input = "vxlan";
@@ -103,7 +103,26 @@ int run_control_plane(int readFd) {
         parser.runTest(input);
     }
 #endif
-
+#if 1
+    {
+        std::string cmd = "load_json";
+        std::string C_input = "/home/ubuntu/Nutcracker/utils/p4-nutcracker/FLOW_MONITOR/ingress.json";
+        std::vector<std::string> input;
+        input.push_back(cmd);
+        input.push_back(C_input);
+        parser.loadJson(input);   
+    }
+#endif
+#if 1
+    {
+        std::string cmd = "run_test";
+        std::string test_input = "flow_monitor";
+        std::vector<std::string> input;
+        input.push_back(cmd);
+        input.push_back(test_input);
+        parser.runTest(input);
+    }
+#endif
     while (1) {
         ipc_poll();
         net_loop();

@@ -145,21 +145,20 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 			return -1;
 		}
 	}
-
+#if 0
 	/* Enabled hairpin queue before port start */
 	if (nb_hairpin_queues && rte_eth_dev_is_valid_port(port ^ 1)) {
 		/* Hairpin to both self and peer */
 		assert((nb_hairpin_queues % 2) == 0);
+		pr_info("Hairpin both self and peer\n");
 		for (queue_index = 0; queue_index < nb_hairpin_queues / 2; queue_index++)
 			rss_queue_list[queue_index] = config->port_config.nb_queues + queue_index * 2;
 		result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
 #ifdef CONFIG_BLUEFIELD2
-			printf("Cannot hairpin self port %" PRIu8 ", ret: %s",
-				     port, doca_get_error_string(result));
+			printf("Cannot hairpin self port %" PRIu8 ", ret: %s", port, doca_get_error_string(result));
 #elif CONFIG_BLUEFIELD3
-			printf("Cannot hairpin self port %" PRIu8 ", ret: %s",
-				     port, doca_error_get_descr(result));
+			printf("Cannot hairpin self port %" PRIu8 ", ret: %s", port, doca_error_get_descr(result));
 #endif
 			return result;
 		}
@@ -168,11 +167,9 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 		result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues / 2);
 		if (result != DOCA_SUCCESS) {
 #ifdef CONFIG_BLUEFIELD2
-			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s",
-				     port ^ 1, doca_get_error_string(result));
+			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s", port ^ 1, doca_get_error_string(result));
 #elif CONFIG_BLUEFIELD3
-			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s",
-				     port ^ 1, doca_error_get_descr(result));
+			printf("Cannot hairpin peer port %" PRIu8 ", ret: %s", port ^ 1, doca_error_get_descr(result));
 #endif
 			return result;
 		}
@@ -180,10 +177,32 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 		/* Hairpin to self or peer */
 		for (queue_index = 0; queue_index < nb_hairpin_queues; queue_index++)
 			rss_queue_list[queue_index] = config->port_config.nb_queues + queue_index;
-		if (rte_eth_dev_is_valid_port(port ^ 1))
+		if (rte_eth_dev_is_valid_port(port ^ 1)) {
+			pr_info("Hairpin to peer\n");
 			result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues);
-		else
+		}
+		else {
+			pr_info("Hairpin to self\n");
 			result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues);
+		}
+		if (result != DOCA_SUCCESS) {
+			printf("Cannot hairpin port %" PRIu8 ", ret=%d", port, result);
+			return result;
+		}
+	}
+#endif
+
+	if (nb_hairpin_queues) {
+		/* Hairpin to self or peer */
+		for (queue_index = 0; queue_index < nb_hairpin_queues; queue_index++)
+			rss_queue_list[queue_index] = config->port_config.nb_queues + queue_index;
+		if (rte_eth_dev_is_valid_port(port ^ 1)) {
+			pr_info("Hairpin to peer\n");
+			result = setup_hairpin_queues(port, port ^ 1, rss_queue_list, nb_hairpin_queues);
+		} else {
+			pr_info("Hairpin to self\n");
+			result = setup_hairpin_queues(port, port, rss_queue_list, nb_hairpin_queues);
+		}
 		if (result != DOCA_SUCCESS) {
 			printf("Cannot hairpin port %" PRIu8 ", ret=%d", port, result);
 			return result;
