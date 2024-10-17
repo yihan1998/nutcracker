@@ -298,8 +298,6 @@ vxlan_fwd_build_fwd(struct vxlan_fwd_port_cfg *port_cfg, struct doca_flow_fwd *f
 
 }
 
-struct doca_flow_pipe_entry * monitor_entry;
-
 static int
 vxlan_fwd_create_monitor_pipe(struct vxlan_fwd_port_cfg *port_cfg)
 {
@@ -322,12 +320,12 @@ vxlan_fwd_create_monitor_pipe(struct vxlan_fwd_port_cfg *port_cfg)
 	pipe_cfg.match = &match;
 	actions_arr[0] = &actions;
 	pipe_cfg.actions = actions_arr;
-	pipe_cfg.attr.is_root = false;
+	pipe_cfg.attr.is_root = true;
 	pipe_cfg.attr.nb_actions = NB_ACTION_ARRAY;
 	pipe_cfg.port = vxlan_fwd_ins->ports[port_cfg->port_id];
 	pipe_cfg.monitor = &monitor;
 
-	SET_MAC_ADDR(match.outer.eth.src_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+	SET_MAC_ADDR(match.outer.eth.dst_mac, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
 
 	/* build monitor part */
 	monitor.flags = DOCA_FLOW_MONITOR_COUNT;
@@ -337,17 +335,22 @@ vxlan_fwd_create_monitor_pipe(struct vxlan_fwd_port_cfg *port_cfg)
 	fwd_miss.type = DOCA_FLOW_FWD_PIPE;
 	fwd_miss.next_pipe = vxlan_fwd_ins->pipe_rss[port_cfg->port_id];
 
-	if (doca_flow_pipe_create(&pipe_cfg, &fwd, &fwd_miss, &vxlan_fwd_ins->pipe_monitor[port_cfg->port_id]) != DOCA_SUCCESS)
+	if (doca_flow_pipe_create(&pipe_cfg, &fwd, &fwd_miss, &vxlan_fwd_ins->pipe_monitor[port_cfg->port_id]) != DOCA_SUCCESS) {
+		printf("Failed to create monitor pipe!\n");
 		return -1;
+	}
 
-	// for (int i = 0; i < 1; i++) {
-		SET_MAC_ADDR(match.outer.eth.src_mac, 0xb8, 0xce, 0xf6, 0xa8, 0x82, 0x00);
-		result = doca_flow_pipe_add_entry(0, vxlan_fwd_ins->pipe_monitor[port_cfg->port_id], &match, &actions, &monitor, NULL, DOCA_FLOW_NO_WAIT, NULL, &monitor_entry);
+	for (int i = 0; i < 190; i++) {
+		struct doca_flow_monitor monitor;
+		memset(&monitor, 0, sizeof(monitor));
+		// monitor.flags = DOCA_FLOW_MONITOR_COUNT;
+		SET_MAC_ADDR(match.outer.eth.dst_mac, 0xb8, 0xce, 0xf6, 0xa8, 0x82, i);
+		result = doca_flow_pipe_add_entry(0, vxlan_fwd_ins->pipe_monitor[port_cfg->port_id], &match, &actions, &monitor, NULL, DOCA_FLOW_NO_WAIT, NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed adding entry to pipe");
 			return 0;
 		}
-	// }
+	}
 
 	result = doca_flow_entries_process(vxlan_fwd_ins->ports[port_cfg->port_id], 0, PULL_TIME_OUT, 190);
 
@@ -712,7 +715,6 @@ vxlan_fwd_init_ports_and_pipes(struct vxlan_fwd_port_cfg *port_cfg)
 	int result;
 
 	resource.nb_counters = port_cfg->nb_counters;
-	resource.nb_meters = port_cfg->nb_meters;
 
 	if (vxlan_fwd_init_doca_flow(port_cfg->nb_queues, "vnf,hws", resource, nr_shared_resources) < 0) {
 		DOCA_LOG_ERR("Failed to init DOCA Flow");

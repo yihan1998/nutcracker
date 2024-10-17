@@ -153,17 +153,6 @@ vxlan_fwd_process_pkts(void *process_pkts_params)
 				else
 					rte_eth_tx_burst(port_id ^ 1, queue_id, &mbufs[j], 1);
 			}
-			sleep(1);
-			{
-				doca_error_t result;
-				struct doca_flow_query query_stats;
-				result = doca_flow_query_entry(monitor_entry, &query_stats);
-				if (result != DOCA_SUCCESS) {
-					DOCA_LOG_ERR("Failed to query entry: %s", doca_get_error_string(result));
-					continue;
-				}
-				DOCA_LOG_INFO("Total bytes: %ld/Total packets: %ld", query_stats.total_bytes, query_stats.total_pkts);
-			}
 		}
 	}
 	return 0;

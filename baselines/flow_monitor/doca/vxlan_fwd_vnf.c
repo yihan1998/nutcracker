@@ -52,7 +52,7 @@ main(int argc, char **argv)
 		.rx_only = 0,
 		.hw_offload = 0,
 		.stats_timer = 100000,
-		.is_hairpin = false,
+		.is_hairpin = true,
 	};
 	struct app_vnf *vnf;
 	struct vxlan_fwd_process_pkts_params process_pkts_params = {.cfg = &app_cfg};

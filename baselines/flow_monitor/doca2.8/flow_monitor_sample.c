@@ -202,17 +202,6 @@ doca_error_t flow_monitor(int nb_queues, enum doca_flow_tun_ext_vxlan_type vxlan
 	DOCA_LOG_INFO("Wait few seconds for packets to arrive");
 	while(1) {
 		sleep(1);
-#if 0
-		for (port_id = 0; port_id < nb_ports; port_id++) {
-			struct doca_flow_resource_query stats;
-			result = doca_flow_resource_query_entry(entries[port_id][0], &stats);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Port %d failed to query monitor pipe entry: %s", port_id, doca_error_get_descr(result));
-				return result;
-			}
-			DOCA_LOG_INFO("Port %d, monitor pipe entry received %lu packets", port_id, stats.counter.total_pkts);
-		}
-#endif
 	}
 
 	result = stop_doca_flow_ports(nb_ports, ports);

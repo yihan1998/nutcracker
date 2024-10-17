@@ -67,10 +67,9 @@ pthread_rwlock_t fsm_lock;
 
 struct match_action_table_entry {
     struct list_head list;
-    uint8_t h_dest[6];
-    uint32_t count;
-    bool (*cond_check)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint8_t h_dest[6]);
-    int (*callback_fn)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint32_t *count);
+    uint32_t udp_dest;
+    bool (*cond_check)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
+    int (*callback_fn)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
 };
 
 struct list_head match_action_table;
@@ -221,18 +220,14 @@ do {\
 } while (0)									/* create source mac address */
 
 
-bool cond_check(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint8_t h_dest[6]) {
-    struct ethhdr *ethhdr;
-    ethhdr = (struct ethhdr *)pkt;
-
-    if (memcmp(ethhdr->h_dest, h_dest, 6) == 0) return true;
-    return false;
+bool cond_check(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
+    return true;
 }
 
-int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint32_t *count) {
+int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     struct ethhdr *ethhdr;
     ethhdr = (struct ethhdr *)pkt;
-#if 0
+
 	int ret;
 	uint32_t *data;
 	ret = rte_hash_lookup_data(flow_table_lcore, (const void *) ethhdr->h_dest, (void **)&data);
@@ -256,9 +251,7 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint32_t *coun
         //     ethhdr->h_dest[0], ethhdr->h_dest[1], ethhdr->h_dest[2],
         //     ethhdr->h_dest[3], ethhdr->h_dest[4], ethhdr->h_dest[5]);
     }
-#endif
 
-    (*count)++;    
     return 0;
 }
 
@@ -266,9 +259,8 @@ int check_match_action_table(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     pthread_rwlock_rdlock(&fsm_lock);
     struct match_action_table_entry * entry;
     list_for_each_entry(entry, &match_action_table, list) {
-        if (entry->cond_check && entry->cond_check(m,pkt,pkt_size,entry->h_dest)) {
-            entry->callback_fn(m, pkt, pkt_size, &entry->count);
-            break;
+        if (entry->cond_check) {
+            entry->callback_fn(m, pkt, pkt_size);
         }
     }
     pthread_rwlock_unlock(&fsm_lock); 
@@ -361,16 +353,6 @@ int main(int argc, char ** argv) {
     }
 
     init_list_head(&match_action_table);
-
-    for (int i = 0; i < 10; i++) {
-        struct match_action_table_entry * entry = (struct match_action_table_entry *)calloc(1, sizeof(struct match_action_table_entry));
-        uint8_t h_dest[6] = {0xb8, 0xce, 0xf6, 0xa8, 0x82, 0x00};
-        h_dest[5] = i;
-        memcpy(entry->h_dest, h_dest, 6);
-        entry->cond_check = cond_check;
-        entry->callback_fn = callback_fn;
-        list_add_tail(&entry->list, &match_action_table);        
-    }
 
     struct match_action_table_entry * entry = (struct match_action_table_entry *)calloc(1, sizeof(struct match_action_table_entry));
     entry->cond_check = cond_check;

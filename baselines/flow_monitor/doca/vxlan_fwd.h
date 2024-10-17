@@ -48,8 +48,6 @@ struct vxlan_fwd_pipe_entry {
 	struct doca_flow_pipe_entry *hw_entry;	/* a pointer for the flow entry in hw */
 };
 
-extern struct doca_flow_pipe_entry * monitor_entry;
-
 /*
  * fills struct app_vnf with init/destroy, process and other needed pointer functions.
  *
