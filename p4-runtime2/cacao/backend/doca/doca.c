@@ -642,7 +642,7 @@ int doca_create_hw_pipe_for_port(struct doca_flow_pipe **pipe, struct flow_pipe_
 				break;
 		}
 
-		result = doca_flow_pipe_cfg_set_monitor(pipe_cfg, &doca_monitor);
+		result = doca_flow_pipe_cfg_set_monitor(doca_cfg, &doca_monitor);
 		if (result != DOCA_SUCCESS) {
 			printf("Failed to set doca_flow_pipe_cfg monitor: %s\n", doca_error_get_descr(result));
 			return result;
