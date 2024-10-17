@@ -38,15 +38,65 @@ public:
 
 class TableEntry {
 public:
+    struct flow_match match;
+    struct flow_actions action;
+    struct flow_fwd fwd;
+    std::vector<ArgBase*> args;
+
+    // Constructor that accepts parameters
     TableEntry(struct flow_match *match_ptr, struct flow_actions *action_ptr, struct flow_fwd *fwd_ptr) {
         if (match_ptr) {
             match = *match_ptr;
         }
         if (action_ptr) {
             action = *action_ptr;
+            extract_args();
         }
         if (fwd_ptr) {
             fwd = *fwd_ptr;
+        }
+    }
+
+    void extract_args() {
+        uint8_t eth_addr[6] = {0};
+        if (action.meta.pkt_meta) {
+            args.push_back(new ArgUInt32(action.meta.pkt_meta));
+        }
+        if (memcmp(action.outer.eth.h_dest, &eth_addr, 6) != 0) {
+            std::array<uint8_t, 6> mac_dest;
+            std::copy(action.outer.eth.h_dest, action.outer.eth.h_dest + 6, mac_dest.begin());
+            args.push_back(new ArgMac(mac_dest));
+        }
+        if (memcmp(action.outer.eth.h_source, &eth_addr, 6) != 0) {
+            std::array<uint8_t, 6> mac_source;
+            std::copy(action.outer.eth.h_source, action.outer.eth.h_source + 6, mac_source.begin());
+            args.push_back(new ArgMac(mac_source));
+        }
+        if (action.outer.ip4.saddr) {
+            args.push_back(new ArgUInt32(action.outer.ip4.saddr));
+        }
+        if (action.outer.ip4.daddr) {
+            args.push_back(new ArgUInt32(action.outer.ip4.daddr));
+        }
+        if (action.outer.udp.source) {
+            args.push_back(new ArgUInt16(action.outer.udp.source));
+        }
+        if (action.outer.udp.dest) {
+            args.push_back(new ArgUInt16(action.outer.udp.dest));
+        }
+        if (action.encap.tun.vxlan_tun_id) {
+            args.push_back(new ArgUInt32(action.encap.tun.vxlan_tun_id));
+        }
+    }
+
+    void printArgs() const {
+        std::cout << "=== Arguments ===" << std::endl;
+        for (const auto& arg : args) {
+            if (arg) {
+                arg->print(); // Assuming each ArgBase has a print method
+            } else {
+                std::cout << "Null argument detected." << std::endl;
+            }
         }
     }
 
@@ -124,11 +174,9 @@ public:
         }
         std::cout << std::dec << std::endl;
     }
-
-    struct flow_match match;
-    struct flow_actions action;
-    struct flow_fwd fwd;
 };
+
+#define MAX_ENTRIES 128
 
 class TablePipe : public Pipe {
 public:
@@ -139,7 +187,9 @@ public:
     struct flow_pipe *defaultNext;
 
     TablePipe(const std::string& name, struct flow_pipe * defaultNext)
-        : name(name), defaultNext(defaultNext) {}
+        : name(name), defaultNext(defaultNext) {
+            memset(&match, 0, sizeof(match));
+        }
 
     void print() const {
         std::cout << "Table Name: " << name << std::endl;

@@ -8,6 +8,7 @@
 #include <rte_tailq.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <time.h>
 
 #include "opt.h"
 #include "utils/printk.h"
@@ -65,8 +66,6 @@ int run_state_machine(struct sk_buff * skb) {
     }
     curr = fsm.egress_root;
     while(curr) {
-    	// pr_info("Execute pipe %s...\n", curr->name);
-        // curr = curr->swPipe.ops.run(curr, skb);
         curr = fsm_table_lookup(curr, skb);
     }
     pthread_rwlock_unlock(&fsm_lock);

@@ -34,6 +34,9 @@ extern "C" int fsm_create_table_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow
     }
 
     if (pipe_cfg->match) {
+        if (pipe_cfg->match->meta.pkt_meta) {
+            table->match.meta.pkt_meta = pipe_cfg->match->meta.pkt_meta;
+        }
         if (pipe_cfg->match->outer.udp.dest) {
             table->match.outer.udp.dest = pipe_cfg->match->outer.udp.dest;
         }

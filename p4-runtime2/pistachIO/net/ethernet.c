@@ -24,9 +24,9 @@ int ethernet_input(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     int ret = NET_RX_DROP;
 
     ethhdr = (struct ethhdr *)pkt;
-    if (memcmp(ethhdr->h_dest, src_addr, ETH_ALEN) != 0) {
-		return NET_RX_DROP;
-    }
+    // if (memcmp(ethhdr->h_dest, src_addr, ETH_ALEN) != 0) {
+	// 	return NET_RX_DROP;
+    // }
 
     unsigned char temp[ETH_ALEN];
     memcpy(temp, ethhdr->h_source, ETH_ALEN);

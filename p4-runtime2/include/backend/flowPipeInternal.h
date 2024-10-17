@@ -228,6 +228,7 @@ struct flow_pipe * instantialize_flow_pipe(const char * name);
 
 uint8_t * get_packet_internal(struct sk_buff * skb);
 uint32_t get_packet_size_internal(struct sk_buff * skb);
+void set_packet_meta_internal(struct sk_buff* skb, uint32_t meta);
 struct sk_buff* prepend_packet_internal(struct sk_buff* skb, uint32_t prepend_size);
 bool fsm_table_lookup_internal(struct flow_match* pipe_match, struct flow_match* match, struct sk_buff* skb);
 

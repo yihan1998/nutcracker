@@ -26,6 +26,10 @@ uint32_t get_packet_size_internal(struct sk_buff * skb) {
     return skb->mbuf->pkt_len;
 }
 
+void set_packet_meta_internal(struct sk_buff* skb, uint32_t meta) {
+    return rte_flow_dynf_metadata_set(skb->mbuf, meta);
+}
+
 struct sk_buff* prepend_packet_internal(struct sk_buff* skb, uint32_t prepend_size) {
     uint8_t *pkt = rte_pktmbuf_mtod(skb->mbuf, uint8_t *);
     int orig_size = skb->mbuf->pkt_len;
@@ -45,12 +49,16 @@ struct sk_buff* prepend_packet_internal(struct sk_buff* skb, uint32_t prepend_si
 
 bool fsm_table_lookup_internal(struct flow_match* pipe_match, struct flow_match* match, struct sk_buff* skb) {
     uint8_t * p = get_packet_internal(skb);
+    uint32_t meta = rte_flow_dynf_metadata_get(skb->mbuf);
     struct ethhdr * ethhdr = (struct ethhdr *)p;
     struct iphdr * iphdr = (struct iphdr *)&ethhdr[1];
     struct udphdr * udphdr = (struct udphdr *)&iphdr[1];
 
     bool matched = true;
-    if ((pipe_match->outer.udp.dest & udphdr->dest) != match->outer.udp.dest) {
+    if (/*pipe_match->meta.pkt_meta && */((pipe_match->meta.pkt_meta & meta) != match->meta.pkt_meta)) {
+        matched = false;
+    }
+    if (/*pipe_match->outer.udp.dest && */((pipe_match->outer.udp.dest & udphdr->dest) != match->outer.udp.dest)) {
         matched = false;
     }
 

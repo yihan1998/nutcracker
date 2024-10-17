@@ -190,8 +190,7 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 			return result;
 		}
 	}
-#endif
-
+#else
 	if (nb_hairpin_queues) {
 		/* Hairpin to self or peer */
 		for (queue_index = 0; queue_index < nb_hairpin_queues; queue_index++)
@@ -208,7 +207,7 @@ int port_init(struct rte_mempool *mbuf_pool, uint8_t port, struct dpdk_config *c
 			return result;
 		}
 	}
-
+#endif
 	// /* Set isolated mode (true or false) before port start */
 	// ret = rte_flow_isolate(port, isolated, &error);
 	// if (ret < 0) {
