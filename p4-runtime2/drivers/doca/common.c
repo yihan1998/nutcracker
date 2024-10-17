@@ -37,20 +37,6 @@ struct flow_resources {
 
 #define PULL_TIME_OUT 10000
 
-int query_hairpin() {
-	struct doca_flow_query query_stats;
-	doca_error_t result;
-	for (int i = 0; i < 2; i++) {
-		result = doca_flow_query_entry(hairpin_entry[i], &query_stats);
-		if (result != DOCA_SUCCESS) {
-			printf("Failed to query entry: %s\n", doca_get_error_string(result));
-			continue;
-		}
-		printf("Total bytes: %ld / Total packets: %ld\n", query_stats.total_bytes, query_stats.total_pkts);
-	}
-	return 0;
-}
-
 doca_error_t open_doca_device_with_pci(const char *pci_addr, jobs_check func, struct doca_dev **retval) {
 	struct doca_devinfo **dev_list;
 	uint32_t nb_devs;
