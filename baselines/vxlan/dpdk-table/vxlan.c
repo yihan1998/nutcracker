@@ -63,8 +63,16 @@ pthread_rwlock_t fsm_lock;
 
 struct match_action_table_entry {
     struct list_head list;
-    bool (*cond_check)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
-    int (*callback_fn)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size);
+    uint16_t udp_dest;
+    bool (*cond_check)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint16_t udp_dest);
+    uint8_t h_source[8];
+    uint8_t h_dest[8];
+    uint32_t saddr;
+    uint32_t daddr;
+    uint16_t source;
+    uint16_t dest;
+    uint32_t vni;
+    int (*callback_fn)(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni);
 };
 
 struct list_head match_action_table;
@@ -200,11 +208,16 @@ do {\
 	addr[5] = f & 0xff;\
 } while (0)									/* create source mac address */
 
-bool cond_check(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
-    return true;
+bool cond_check(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint16_t dest) {
+    struct ethhdr * ethhdr = (struct ethhdr *)pkt;
+    struct iphdr * iphdr = (struct iphdr *)&ethhdr[1];
+    struct udphdr * udphdr = (struct udphdr *)&iphdr[1];
+
+    if (udphdr->dest == ntohs(dest)) return true;
+    return false;
 }
 
-int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
+int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni) {
     struct ethhdr *orig_ethhdr, *new_ethhdr;
     struct iphdr *orig_iphdr, *new_iphdr;
     struct udphdr *orig_udphdr, *new_udphdr;
@@ -231,23 +244,21 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     new_udphdr = (struct udphdr *)&new_iphdr[1];
     vxlanhdr = (struct vxlanhdr *)&new_udphdr[1];
 
-    // memcpy(new_ethhdr->h_source, orig_ethhdr->h_dest, ETH_ALEN);
-    // memcpy(new_ethhdr->h_dest, orig_ethhdr->h_source, ETH_ALEN);
     new_ethhdr->h_proto = orig_ethhdr->h_proto;
-    SET_MAC_ADDR(new_ethhdr->h_source,0xde,0xed,0xbe,0xef,0xab,0xcd);
-    SET_MAC_ADDR(new_ethhdr->h_dest,0x10,0x70,0xfd,0xc8,0x94,0x75);
+    SET_MAC_ADDR(new_ethhdr->h_source,h_source[0],h_source[1],h_source[2],h_source[3],h_source[4],h_source[5]);
+    SET_MAC_ADDR(new_ethhdr->h_dest,h_dest[0],h_dest[1],h_dest[2],h_dest[3],h_dest[4],h_dest[5]);
 
     // Add IP header
     new_iphdr->version = 4;
     new_iphdr->ihl = 5;
     new_iphdr->tot_len = htons(pkt_size + sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(struct vxlanhdr));
     new_iphdr->protocol = IPPROTO_UDP;
-    new_iphdr->saddr = orig_iphdr->saddr; // Example source IP
-    new_iphdr->daddr = orig_iphdr->saddr; // Example destination IP
+    new_iphdr->saddr=saddr;
+    new_iphdr->daddr=daddr;
 
     // Add UDP header
-    new_udphdr->source = htons(4789); // VXLAN default port
-    new_udphdr->dest = orig_udphdr->dest;
+    new_udphdr->source=htons(source);
+    new_udphdr->dest=htons(dest);
     new_udphdr->len = htons(pkt_size + sizeof(struct udphdr) + sizeof(struct vxlanhdr));
 
     // Add VXLAN header
@@ -262,9 +273,11 @@ int callback_fn(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
 int check_match_action_table(struct rte_mbuf * m, uint8_t * pkt, int pkt_size) {
     pthread_rwlock_rdlock(&fsm_lock);
     struct match_action_table_entry * entry;
+    int i = 0;
     list_for_each_entry(entry, &match_action_table, list) {
-        if (entry->cond_check) {
-            entry->callback_fn(m, pkt, pkt_size);
+        if (entry->cond_check && entry->cond_check(m,pkt,pkt_size,entry->udp_dest)) {
+            entry->callback_fn(m, pkt, pkt_size, entry->h_dest, entry->h_source, entry->saddr, entry->daddr, entry->source, entry->dest, entry->vni);
+            break;
         }
     }
     pthread_rwlock_unlock(&fsm_lock); 
@@ -322,6 +335,8 @@ static int launch_one_lcore(void * args) {
     return 0;
 }
 
+#define BE_IPV4_ADDR(a, b, c, d)    (((uint32_t)a<<24) + (b<<16) + (c<<8) + d)
+
 int main(int argc, char ** argv) {
 	int ret;
     if ((ret = rte_eal_init(argc, argv)) < 0) {
@@ -344,10 +359,28 @@ int main(int argc, char ** argv) {
 
     init_list_head(&match_action_table);
 
-    struct match_action_table_entry * entry = (struct match_action_table_entry *)calloc(1, sizeof(struct match_action_table_entry));
-    entry->cond_check = cond_check;
-    entry->callback_fn = callback_fn;
-    list_add_tail(&entry->list, &match_action_table);
+    for (int i = 0; i < 10; i++) {
+        struct match_action_table_entry * entry = (struct match_action_table_entry *)calloc(1, sizeof(struct match_action_table_entry));
+        entry->udp_dest = 1234 + i;
+        entry->cond_check = cond_check;
+
+        uint8_t h_source[6] = {0xde,0xed,0xbe,0xef,0xab,0xcd};
+        uint8_t h_dest[6] = {0x10,0x70,0xfd,0xc8,0x94,0x75};
+        uint32_t saddr = BE_IPV4_ADDR(8,8,8,i);
+        uint32_t daddr = BE_IPV4_ADDR(1,2,3,i);
+        uint16_t source = 4798;
+        uint16_t dest = 1234 + i;
+
+        memcpy(entry->h_source, h_source, 6);
+        memcpy(entry->h_dest, h_dest, 6);
+        entry->saddr = saddr;
+        entry->daddr = daddr;
+        entry->source = source;
+        entry->dest = dest;
+
+        entry->callback_fn = callback_fn;
+        list_add_tail(&entry->list, &match_action_table);        
+    }
 
     rte_eal_mp_remote_launch(launch_one_lcore, NULL, CALL_MAIN);
     rte_eal_mp_wait_lcore();
