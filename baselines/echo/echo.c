@@ -216,7 +216,7 @@ static int launch_one_lcore(void * args) {
     struct rte_mbuf * rx_pkts[DEFAULT_PKT_BURST];
     struct timeval log, curr;
     uint32_t sec_nb_rx, sec_nb_tx;
-	int portid = 0;
+	int portid;
 
     lid = rte_lcore_id();
     qid = lid;
@@ -234,8 +234,7 @@ static int launch_one_lcore(void * args) {
             sec_nb_rx = sec_nb_tx = 0;
             gettimeofday(&log, NULL);
         }
-		// RTE_ETH_FOREACH_DEV(portid) {
-            {
+		RTE_ETH_FOREACH_DEV(portid) {
             nb_rx = rte_eth_rx_burst(portid, qid, rx_pkts, DEFAULT_PKT_BURST);
             if (nb_rx) {
                 sec_nb_rx += nb_rx;
@@ -247,7 +246,7 @@ static int launch_one_lcore(void * args) {
                     ethernet_input(rx_pkt, pkt, pkt_size);
                 }
 #endif
-                nb_tx = rte_eth_tx_burst(portid ^ 1, qid, rx_pkts, nb_rx);
+                nb_tx = rte_eth_tx_burst(portid, qid, rx_pkts, nb_rx);
                 sec_nb_tx += nb_tx;
                 if (unlikely(nb_tx < nb_rx)) {
                     do {
