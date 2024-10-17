@@ -246,7 +246,7 @@ static int launch_one_lcore(void * args) {
                     ethernet_input(rx_pkt, pkt, pkt_size);
                 }
 #endif
-                nb_tx = rte_eth_tx_burst(portid, qid, rx_pkts, nb_rx);
+                nb_tx = rte_eth_tx_burst(portid ^ 1, qid, rx_pkts, nb_rx);
                 sec_nb_tx += nb_tx;
                 if (unlikely(nb_tx < nb_rx)) {
                     do {
