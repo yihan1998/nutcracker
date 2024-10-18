@@ -25,6 +25,7 @@ int doca_init();
 int vxlan_encap_sw();
 int vxlan_encap_hw_offloading();
 
+int flow_monitor_sw();
 int flow_monitor_hw_offloading();
 
 #ifdef __cplusplus

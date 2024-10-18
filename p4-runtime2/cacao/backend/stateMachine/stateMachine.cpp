@@ -18,6 +18,9 @@ extern "C" int fsm_create_table_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow
         }
     }
     auto table = new TablePipe(pipe_cfg->attr.name,defaultNext);
+
+    std::cout << "Number of current entries: " << table->entries.size() << std::endl;
+
     pipe->swPipe.pipe = table;
     if (pipe_cfg->attr.domain == FLOW_PIPE_DOMAIN_INGRESS) {
         list_add_tail(&pipe->swPipe.list, &fsm.ingress_pipes);

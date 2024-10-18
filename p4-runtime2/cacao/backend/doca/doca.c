@@ -1073,20 +1073,37 @@ int vxlan_encap_sw() {
 	return DOCA_SUCCESS;
 }
 
+int flow_monitor_sw() {
+	int nr_rules = 190;
+	uint8_t dst_addr[6] = {0xb8, 0xce, 0xf6, 0xa8, 0x82, 0x00};
+	for (int i = 0; i < nr_rules; i++) {
+		dst_addr[5] = i;
+			{
+			struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_1");
+			pipe->swPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_0", i, i, dst_addr);
+		}
+		{
+			struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_tbl_0");
+			pipe->swPipe.ops.add_pipe_entry(pipe, "ingress_monitor_1", i, i, dst_addr);
+		}
+	}
+	return 0;
+}
+
 int flow_monitor_hw_offloading() {
-	// int nr_rules = 190;
-	// uint8_t dst_addr[6] = {0xb8, 0xce, 0xf6, 0xa8, 0x82, 0x00};
-	// for (int i = 0; i < nr_rules; i++) {
-	// 	dst_addr[5] = i;
-	// 	{
-	// 		struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_tbl_0");
-	// 		pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_monitor_1", i, i, dst_addr);
-	// 	}
-	// 	{
-	// 		struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_1");
-	// 		pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_0", i, i, dst_addr);
-	// 	}
-	// }
+	int nr_rules = 190;
+	uint8_t dst_addr[6] = {0xb8, 0xce, 0xf6, 0xa8, 0x82, 0x00};
+	for (int i = 0; i < nr_rules; i++) {
+		dst_addr[5] = i;
+		{
+			struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_tbl_0");
+			pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_monitor_1", i, i, dst_addr);
+		}
+		{
+			struct flow_pipe * pipe = flow_get_pipe("ingress_monitor_1");
+			pipe->hwPipe.ops.add_pipe_entry(pipe, "ingress_hairpin_0", i, i, dst_addr);
+		}
+	}
 	return 0;
 }
 

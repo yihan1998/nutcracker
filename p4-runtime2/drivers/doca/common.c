@@ -512,7 +512,7 @@ int build_hairpin_pipe(uint16_t port_id) {
 	pipe_cfg.monitor = &monitor;
 	actions_arr[0] = &actions;
 	pipe_cfg.actions = actions_arr;
-	pipe_cfg.attr.is_root = true;
+	pipe_cfg.attr.is_root = false;
 	pipe_cfg.attr.nb_actions = NB_ACTION_ARRAY;
 	pipe_cfg.port = ports[port_id];
 

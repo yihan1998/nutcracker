@@ -203,20 +203,19 @@ extern "C" struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct sk_
                     }
                 }
 
+                if (entry.monitor.flags & FLOW_MONITOR_COUNT) {
+                    entry.count++;
+                }
+
                 // Check if we have enough valid arguments to call run
                 if (convertedArgs.size() == 1) {
-                    auto invoke_start = std::chrono::high_resolution_clock::now();
                     pipe->swPipe.ops.run(
                         pipe, 
                         skb, 
                         convertedArgs[0]
                     );
-                    auto invoke_done = std::chrono::high_resolution_clock::now();
-                    std::chrono::duration<double, std::micro> invoke_time = invoke_done - invoke_start;
-                    std::cerr << "Ivocation time\t" << invoke_time.count() << " microseconds" << std::endl;
                 } else if (convertedArgs.size() == 7) {
                     // Call the run method with the converted arguments
-                    auto invoke_start = std::chrono::high_resolution_clock::now();
                     pipe->swPipe.ops.run(
                         pipe, 
                         skb, 
@@ -228,10 +227,6 @@ extern "C" struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct sk_
                         convertedArgs[5], // dest
                         convertedArgs[6]  // vni
                     );
-
-                    auto invoke_done = std::chrono::high_resolution_clock::now();
-                    std::chrono::duration<double, std::micro> invoke_time = invoke_done - invoke_start;
-                    std::cerr << "Ivocation time\t" << invoke_time.count() << " microseconds" << std::endl;
                 } else {
                     std::cerr << "Error: Not enough valid arguments in entry." << std::endl;
                 }
@@ -250,10 +245,11 @@ extern "C" struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct sk_
 }
 
 
-extern "C" int fsm_table_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* action, struct flow_fwd* fwd) {
+extern "C" int fsm_table_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* action, struct flow_monitor* monitor, struct flow_fwd* fwd) {
     auto tablePipe = static_cast<TablePipe*>(pipe->swPipe.pipe);
 
-    TableEntry entry(match,action,fwd);
+    TableEntry entry(match,action,monitor,fwd);
+
     pthread_rwlock_wrlock(&fsm_lock);
     tablePipe->entries.push_back(entry);
     pthread_rwlock_unlock(&fsm_lock);

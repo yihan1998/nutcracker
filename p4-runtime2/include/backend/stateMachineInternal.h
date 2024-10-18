@@ -40,17 +40,24 @@ class TableEntry {
 public:
     struct flow_match match;
     struct flow_actions action;
+    struct flow_monitor monitor;
     struct flow_fwd fwd;
     std::vector<ArgBase*> args;
+    int count;
 
     // Constructor that accepts parameters
-    TableEntry(struct flow_match *match_ptr, struct flow_actions *action_ptr, struct flow_fwd *fwd_ptr) {
+    TableEntry(struct flow_match *match_ptr, struct flow_actions *action_ptr, struct flow_monitor* monitor_ptr, struct flow_fwd *fwd_ptr) : count(0) {
         if (match_ptr) {
             match = *match_ptr;
         }
         if (action_ptr) {
             action = *action_ptr;
             extract_args();
+        }
+        if (monitor_ptr) {
+            printf("Adding monitor...");
+            monitor = *monitor_ptr;
+            printf("[DONE]\n");
         }
         if (fwd_ptr) {
             fwd = *fwd_ptr;

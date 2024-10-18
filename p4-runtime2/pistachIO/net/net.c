@@ -60,8 +60,6 @@ int run_state_machine(struct sk_buff * skb) {
     struct flow_pipe * curr = fsm.ingress_root;
     pthread_rwlock_rdlock(&fsm_lock);
     while(curr) {
-    	// printf(ESC GREEN "[INFO]" RESET " Execute pipe %s...\n", curr->name);
-        // curr = curr->swPipe.ops.run(curr, skb);
         curr = fsm_table_lookup(curr, skb);
     }
     curr = fsm.egress_root;
