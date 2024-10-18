@@ -171,7 +171,7 @@ extern int flow_create_hw_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* 
 extern struct flow_pipe* flow_get_pipe(const char* pipe_name);
 extern int flow_get_pipe_id_by_name(const char* pipe_name);
 extern int flow_hw_control_pipe_add_entry(struct flow_pipe* pipe, uint8_t priority, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd);
-extern int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_monitor* monitor, struct flow_monitor* monitor, struct flow_fwd* fwd);
+extern int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_monitor* monitor,struct flow_monitor* monitor, struct flow_fwd* fwd);
 int create_ingress_hairpin_2_hw_pipe(struct flow_pipe* pipe);
 int create_ingress_rss_0_hw_pipe(struct flow_pipe* pipe);
 int create_ingress_udp_tbl_0_hw_pipe(struct flow_pipe* pipe);
