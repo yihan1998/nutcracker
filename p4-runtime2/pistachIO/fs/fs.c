@@ -31,7 +31,7 @@ struct rte_mempool * nftask_mp;
 
 int __init fs_init(void) {
     int fd;
-    skb_mp = rte_mempool_create("skb_mp", 2048, sizeof(struct sk_buff) + JUMBO_FRAME_LEN, 0, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
+    skb_mp = rte_mempool_create("skb_mp", 4096, sizeof(struct sk_buff) + JUMBO_FRAME_LEN, RTE_MEMPOOL_CACHE_MAX_SIZE, 0, NULL, NULL, NULL, NULL, rte_socket_id(), 0);
     assert(skb_mp != NULL);
 
     skb_mp_lock_mz = rte_memzone_reserve_aligned("skb_mp_lock", sizeof(pthread_spinlock_t), SOCKET_ID_ANY, 0, RTE_CACHE_LINE_SIZE);

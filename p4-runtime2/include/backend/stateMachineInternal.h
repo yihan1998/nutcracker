@@ -55,9 +55,7 @@ public:
             extract_args();
         }
         if (monitor_ptr) {
-            printf("Adding monitor...");
             monitor = *monitor_ptr;
-            printf("[DONE]\n");
         }
         if (fwd_ptr) {
             fwd = *fwd_ptr;
