@@ -110,6 +110,18 @@ struct flow_actions
     struct flow_encap_action encap;
 } __attribute__((packed));
 
+enum flow_monitor_type
+{
+    FLOW_MONITOR_NONE=0,
+    FLOW_MONITOR_METER,
+    FLOW_MONITOR_COUNT,
+};
+
+struct flow_monitor
+{
+    uint8_t flags;
+} __attribute__((packed));
+
 enum flow_fwd_type
 {
     FLOW_FWD_NONE=0,
@@ -152,6 +164,7 @@ struct flow_pipe_cfg
     struct flow_pipe_attr attr;
     struct flow_match* match;
     struct flow_actions** actions;
+    struct flow_monitor* monitor;
 } __attribute__((packed));
 
 struct sk_buff;
@@ -169,19 +182,20 @@ struct table_entry {
 
 extern uint8_t* get_packet(struct sk_buff* skb);
 extern uint32_t get_packet_size(struct sk_buff* skb);
+void set_packet_meta(struct sk_buff* skb, uint32_t meta);
 extern struct sk_buff* prepend_packet(struct sk_buff* skb, uint32_t prepend_size);
 extern struct flow_pipe* flow_get_pipe(const char* pipe_name);
 extern int create_fsm_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd *fwd, struct flow_pipe* pipe);
 extern struct flow_pipe* fsm_table_lookup(struct flow_pipe* pipe, struct flow_match* match, struct sk_buff* skb);
-extern int fsm_table_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* action, struct flow_fwd* fwd);
+extern int fsm_table_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* action, struct flow_monitor* monitor, struct flow_fwd* fwd);
 int create_egress_vxlan_encap_tbl_2_fsm_pipe(struct flow_pipe* pipe);
 int create_egress_encap_3_fsm_pipe(struct flow_pipe* pipe);
-struct flow_pipe* run_egress_vxlan_encap_tbl_2_fsm_pipe(struct flow_pipe* pipe, struct sk_buff* skb);
+struct flow_pipe* run_egress_vxlan_encap_tbl_2_fsm_pipe(struct flow_pipe* pipe, struct sk_buff* skb, uint32_t meta);
 struct flow_pipe* run_egress_encap_3_fsm_pipe(struct flow_pipe* pipe, struct sk_buff* skb, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni);
-int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni);
-int add_egress_vxlan_encap_tbl_2_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint16_t dest);
+int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint32_t match_meta, uint32_t action_meta, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni);
+int add_egress_vxlan_encap_tbl_2_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint32_t match_meta, uint32_t action_meta, uint16_t dest);
 
-int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni)
+int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint32_t match_meta, uint32_t action_meta, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni)
 {
     struct flow_match match;
     struct flow_actions actions;
@@ -191,6 +205,7 @@ int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, 
     memset(&fwd,0,sizeof(fwd));
     SET_MAC_ADDR(actions.outer.eth.h_dest,h_dest[0],h_dest[1],h_dest[2],h_dest[3],h_dest[4],h_dest[5]);
     SET_MAC_ADDR(actions.outer.eth.h_source,h_source[0],h_source[1],h_source[2],h_source[3],h_source[4],h_source[5]);
+    match.meta.pkt_meta=match_meta;
     actions.outer.ip4.saddr=saddr;
     actions.outer.ip4.daddr=daddr;
     actions.outer.udp.source=source;
@@ -198,10 +213,10 @@ int add_egress_encap_3_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, 
     actions.encap.tun.vxlan_tun_id=vni;
     fwd.type=FLOW_FWD_PIPE;
     fwd.next_pipe=flow_get_pipe(next);
-    return fsm_table_add_entry(pipe,&match,&actions,&fwd);
+    return fsm_table_add_entry(pipe,&match,&actions,0,&fwd);
 }
 
-int add_egress_vxlan_encap_tbl_2_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint16_t dest)
+int add_egress_vxlan_encap_tbl_2_fsm_pipe_entry(struct flow_pipe* pipe, const char* next, uint32_t match_meta, uint32_t action_meta, uint16_t dest)
 {
     struct flow_match match;
     struct flow_actions actions;
@@ -210,9 +225,10 @@ int add_egress_vxlan_encap_tbl_2_fsm_pipe_entry(struct flow_pipe* pipe, const ch
     memset(&actions,0,sizeof(actions));
     memset(&fwd,0,sizeof(fwd));
     match.outer.udp.dest=ntohs(dest);
+    actions.meta.pkt_meta=action_meta;
     fwd.type=FLOW_FWD_PIPE;
     fwd.next_pipe=flow_get_pipe("egress_encap_3");
-    return fsm_table_add_entry(pipe,&match,&actions,&fwd);
+    return fsm_table_add_entry(pipe,&match,&actions,0,&fwd);
 }
 
 int create_egress_vxlan_encap_tbl_2_fsm_pipe(struct flow_pipe* pipe)
@@ -241,6 +257,7 @@ int create_egress_encap_3_fsm_pipe(struct flow_pipe* pipe)
     pipe_cfg.attr.is_root=false;
     pipe_cfg.attr.domain=FLOW_PIPE_DOMAIN_EGRESS;
     pipe_cfg.match=&match;
+    match.meta.pkt_meta=0xffffffff;
     return create_fsm_pipe(&pipe_cfg,0,pipe);  
 }
 
@@ -259,6 +276,11 @@ int create_egress_fwd_port_4_fsm_pipe(struct flow_pipe* pipe)
     pipe_cfg.match=&match;
     fwd.type=FLOW_FWD_PORT;
     return create_fsm_pipe(&pipe_cfg,&fwd,pipe);
+}
+
+struct flow_pipe* run_egress_vxlan_encap_tbl_2_fsm_pipe(struct flow_pipe* pipe, struct sk_buff* skb, uint32_t meta) {
+    set_packet_meta(skb,meta);
+    return 0;
 }
 
 struct flow_pipe* run_egress_encap_3_fsm_pipe(struct flow_pipe* pipe, struct sk_buff* skb, uint8_t h_dest[6], uint8_t h_source[6], uint32_t saddr, uint32_t daddr, uint16_t source, uint16_t dest, uint32_t vni)
@@ -286,5 +308,15 @@ struct flow_pipe* run_egress_encap_3_fsm_pipe(struct flow_pipe* pipe, struct sk_
     new_udp_hdr->len=htons(pkt_size+sizeof(struct udphdr)+sizeof(struct vxlanhdr));
     vxlan_hdr->flags=htonl(0x08000000);
     vxlan_hdr->vni_reserved2=htonl(0x123456);
+    // printf("Source IP Address: %u.%u.%u.%u\n",
+    //        (saddr >> 24) & 0xFF, (saddr >> 16) & 0xFF,
+    //        (saddr >> 8) & 0xFF, saddr & 0xFF);
+    
+    // printf("Destination IP Address: %u.%u.%u.%u\n",
+    //        (daddr >> 24) & 0xFF, (daddr >> 16) & 0xFF,
+    //        (daddr >> 8) & 0xFF, daddr & 0xFF);
+    
+    // printf("Source Port: %u\n", source);
+    // printf("Destination Port: %u\n", dest);
     return 0;
 }

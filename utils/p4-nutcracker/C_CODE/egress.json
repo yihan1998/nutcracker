@@ -26,6 +26,7 @@
             ],
             "fsm_enable": true,
             "fsm_ops": {
+                "run": "run_egress_vxlan_encap_tbl_2_fsm_pipe",
                 "add_pipe_entry": "add_egress_vxlan_encap_tbl_2_fsm_pipe_entry",
                 "create_pipe": "create_egress_vxlan_encap_tbl_2_fsm_pipe"
             },
