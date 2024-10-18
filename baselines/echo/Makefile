@@ -7,6 +7,14 @@ CFLAGS 		:= -Wall -Werror -O3 -g -march=native -I../common
 
 LDFLAGS 	:= 
 
+# Configurations
+CONFIG 	= .config
+include ${CONFIG}
+
+ifdef CONFIG_NR_CPUS
+	CFLAGS	+= -DCONFIG_NR_CPUS=$(CONFIG_NR_CPUS)
+endif
+
 LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
 LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
 CFLAGS 		+= $(LIBDPDK_CFLAGS)
