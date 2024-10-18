@@ -110,6 +110,18 @@ struct flow_actions
     struct flow_encap_action encap;
 } __attribute__((packed));
 
+enum flow_monitor_type
+{
+    FLOW_MONITOR_NONE=0,
+    FLOW_MONITOR_METER,
+    FLOW_MONITOR_COUNT,
+};
+
+struct flow_monitor
+{
+    uint8_t flags;
+} __attribute__((packed));
+
 enum flow_fwd_type
 {
     FLOW_FWD_NONE=0,
@@ -152,13 +164,14 @@ struct flow_pipe_cfg
     struct flow_pipe_attr attr;
     struct flow_match* match;
     struct flow_actions** actions;
+    struct flow_monitor* monitor;
 } __attribute__((packed));
 
 extern int flow_create_hw_pipe(struct flow_pipe_cfg* pipe_cfg, struct flow_fwd* fwd, struct flow_fwd* fwd_miss, struct flow_pipe* pipe);
 extern struct flow_pipe* flow_get_pipe(const char* pipe_name);
 extern int flow_get_pipe_id_by_name(const char* pipe_name);
 extern int flow_hw_control_pipe_add_entry(struct flow_pipe* pipe, uint8_t priority, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd);
-extern int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_fwd* fwd);
+extern int flow_hw_pipe_add_entry(struct flow_pipe* pipe, struct flow_match* match, struct flow_actions* actions, struct flow_monitor* monitor, struct flow_fwd* fwd);
 int create_egress_encap_3_hw_pipe(struct flow_pipe* pipe);
 int create_egress_fwd_port_4_hw_pipe(struct flow_pipe* pipe);
 int create_egress_vxlan_encap_tbl_2_hw_pipe(struct flow_pipe* pipe);
@@ -187,7 +200,7 @@ int add_egress_encap_3_hw_pipe_entry(struct flow_pipe* pipe, const char* next_ac
     actions.meta.pkt_meta=flow_get_pipe_id_by_name(next_action);
     fwd.type=FLOW_FWD_PIPE;
     fwd.next_pipe=flow_get_pipe(next_action);
-    return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
+    return flow_hw_pipe_add_entry(pipe,&match,&actions,0,&fwd);
 }
 
 int add_egress_vxlan_encap_tbl_2_hw_pipe_entry(struct flow_pipe* pipe, const char* next_action, uint16_t dest)
@@ -204,7 +217,7 @@ int add_egress_vxlan_encap_tbl_2_hw_pipe_entry(struct flow_pipe* pipe, const cha
     actions.meta.pkt_meta=flow_get_pipe_id_by_name(next_action);
     fwd.type=FLOW_FWD_PIPE;
     fwd.next_pipe=flow_get_pipe(next_action);
-    return flow_hw_pipe_add_entry(pipe,&match,&actions,&fwd);
+    return flow_hw_pipe_add_entry(pipe,&match,&actions,0,&fwd);
 }
 
 int create_egress_encap_3_hw_pipe(struct flow_pipe* pipe)
