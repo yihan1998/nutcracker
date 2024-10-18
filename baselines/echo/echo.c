@@ -238,14 +238,14 @@ static int launch_one_lcore(void * args) {
             nb_rx = rte_eth_rx_burst(portid, qid, rx_pkts, DEFAULT_PKT_BURST);
             if (nb_rx) {
                 sec_nb_rx += nb_rx;
-#if 0
+
                 for (int i = 0; i < nb_rx; i++) {
                     struct rte_mbuf * rx_pkt = rx_pkts[i];
                     int pkt_size = rx_pkt->pkt_len;
                     uint8_t * pkt = rte_pktmbuf_mtod(rx_pkt, uint8_t *);
                     ethernet_input(rx_pkt, pkt, pkt_size);
                 }
-#endif
+
                 nb_tx = rte_eth_tx_burst(portid, qid, rx_pkts, nb_rx);
                 sec_nb_tx += nb_tx;
                 if (unlikely(nb_tx < nb_rx)) {
