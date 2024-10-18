@@ -3,7 +3,7 @@ LD := gcc
 
 SRC_DIR		:= ./
 BUILD_DIR	:= ./build
-CFLAGS 		:= -Wall -Werror -O3 -g -march=native -I../common
+CFLAGS 		:= -Wall -Werror -O3 -g -I../common #-march=native 
 
 LDFLAGS 	:= 
 
