@@ -21,8 +21,14 @@ public:
     virtual void print(int level = 0, int verbosity = 0) const = 0; // Pure virtual function for printing
     virtual std::string getName() const = 0;
 
+    int getBaseId() const { return baseId; } // Getter for ID
+    void setBaseId(int id) { baseId = id; } // Setter for ID
+
 protected:
     CallGraphNodeBase() {};
+
+private:
+    int baseId; // Unique ID for the node
 };
 
 template <typename T>
@@ -54,12 +60,16 @@ public:
     void setNextNode(CallGraphNodeBase* node) { nextNode_ = node; }
     CallGraphNodeBase* nextNode() const { return nextNode_; }
 
-    int getId() { return data->getId(); }
+    int getId() const { return data->getId(); }
     std::string getName() const { return data->getName(); }
 
     void print(int level = 0, int verbosity = 0) const {
         std::string indent(level * 2, ' ');
-        std::cout << indent << "ActionNode: " << getName() << std::endl;
+        std::cout << indent << "ActionNode: " << getName() << " (id: " << getId() << ", base id: " << getBaseId() << ")" << std::endl;
+
+        if (verbosity) {
+            data->print(level+1, verbosity);
+        }
 
         if (nextNode_) {
             std::cout << indent << "  Next Node: " << nextNode_->getName() << std::endl;
@@ -86,7 +96,7 @@ public:
 
     TableNode(Table* table) : CallGraphNode<Table>(table), defaultActionNode_(nullptr) {}
 
-    int getId() { return data->getId(); }
+    int getId() const { return data->getId(); }
     std::string getName() const { return data->getName(); }
 
     void setDefaultActionNode(ActionNode* defaultActionNode) {
@@ -99,7 +109,7 @@ public:
 
     void print(int level = 0, int verbosity = 0) const {
         std::string indent(level * 2, ' ');
-        std::cout << indent << "TableNode: " << getName() << std::endl;
+        std::cout << indent << "TableNode: " << getName() << " (id: " << getId() << ", base id: " << getBaseId() << ")" << std::endl;
 
         if (defaultActionNode_) {
             std::cout << indent << "  Default Action Node: " << defaultActionNode_->getName() << std::endl;
@@ -130,12 +140,12 @@ public:
     CallGraphNodeBase* trueNextNode() const { return trueNextNode_; }
     CallGraphNodeBase* falseNextNode() const { return falseNextNode_; }
 
-    int getId() { return data->getId(); }
+    int getId() const { return data->getId(); }
     std::string getName() const { return data->getName(); }
 
     void print(int level = 0, int verbosity = 0) const {
         std::string indent(level * 2, ' ');
-        std::cout << indent << "ConditionalNode: " << getName() << std::endl;
+        std::cout << indent << "ConditionalNode: " << getName() << " (id: " << getId() << ", base id: " << getBaseId() << ")" << std::endl;
 
         if (trueNextNode_) {
             std::cout << indent << "True Next Node: " << std::endl;
@@ -155,7 +165,7 @@ private:
 
 class CallGraph {
 public:
-    CallGraph() : root(nullptr) {}
+    CallGraph() : root(nullptr), nextId(0) {}
 
     CallGraphNodeBase* getRoot() const { return root; }
 
@@ -181,13 +191,16 @@ public:
         root = node;
     }
 
-    void insert(CallGraphNodeBase* node) {
-        if (root == nullptr) {
-            root = node;
-        } else {
-            insertNode(root, node);
-        }
-    }
+    // void insert(CallGraphNodeBase* node) {
+    //     std::cout << "Inserting node..." << std::endl;
+    //     node->setBaseId(nextId++);
+    //     node->print();
+    //     if (root == nullptr) {
+    //         root = node;
+    //     } else {
+    //         insertNode(root, node);
+    //     }
+    // }
 
     void print(int level = 0, int verbosity = 0) const {
         if (root != nullptr) {
@@ -216,6 +229,7 @@ public:
 
 private:
     CallGraphNodeBase* root;
+    int nextId;
 
     std::vector<ActionNode*> actions;
     std::vector<TableNode*> tables;
@@ -224,6 +238,7 @@ private:
     void topologicalSortUtil(CallGraphNodeBase* node, std::set<CallGraphNodeBase*>& visited, std::vector<CallGraphNodeBase*>& sortedNodes) {
         // Mark the current node as visited
         if (visited.find(node) == visited.end()) {
+            node->setBaseId(nextId++);
             visited.insert(node);
             
             // Recur for all children

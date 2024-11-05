@@ -20,12 +20,12 @@ public:
             std::cout << indent << BOLD << "Action" << RESET << " (ID: " << id << ", Name: " << name << ")" << std::endl;
         } else {
             std::cout << indent << BOLD << "Action" << RESET << " (ID: " << id << ", Name: " << name << ")" << std::endl;
-            // for (const auto& runtimeData : runtimeData_) {
-            //     runtimeData.print(level + 1);
-            // }
-            // for (const auto& primitive : primitives_) {
-            //     primitive.print(level + 1);
-            // }
+            for (const auto& runtimeData : runtimeData) {
+                runtimeData.print(level + 1);
+            }
+            for (const auto& primitive : primitives) {
+                primitive.print(level + 1);
+            }
         }
     }
 

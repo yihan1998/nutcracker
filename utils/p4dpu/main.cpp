@@ -37,8 +37,12 @@ int main(int argc, char ** argv) {
     for (auto pipeline : pipelines) {
         auto sortedNodes = pipeline.callGraph.topologicalSort();
         for (const auto* node : sortedNodes) {
-            std::cout << node->getName() << std::endl;
-            node->print(1);
+            std::cout << BOLD << node->getName() << RESET << std::endl;
+            node->print(1,1);
+        }
+
+        for (const auto* node : sortedNodes) {
+            translate(node);
         }
     }
 
